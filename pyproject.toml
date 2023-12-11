@@ -1,0 +1,15 @@
+[project]
+name = "sekai-bot"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Phrinky", email = "rkmiao@duck.com"},
+]
+dependencies = []
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
