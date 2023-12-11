@@ -3,7 +3,7 @@ name = "sekai-bot"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Phrinky", email = "rkmiao@duck.com"},
+    {name = "Ricky8955555", email = "rkmiao@duck.com"},
 ]
 dependencies = []
 requires-python = ">=3.10"
