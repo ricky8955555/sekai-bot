@@ -5,7 +5,14 @@ description = ""
 authors = [
     {name = "Ricky8955555", email = "rkmiao@duck.com"},
 ]
-dependencies = []
+dependencies = [
+    "aiogram>=3.2.0",
+    "aiohttp>=3.9.1",
+    "pydantic>=2.5.2",
+    "pydantic-yaml>=1.2.0",
+    "async-lru>=2.0.4",
+    "typing-extensions>=4.9.0",
+]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -13,3 +20,32 @@ license = {text = "Apache-2.0"}
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pyproject-flake8>=6.1.0",
+    "pyright>=1.1.339",
+    "black>=23.11.0",
+    "isort>=5.13.1",
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUntypedFunctionDecorator = false
+exclude = [".venv"]
+
+[tool.black]
+line-length = 100
+exclude = ".venv"
+
+[tool.flake8]
+max-line-length = 100
+exclude = ".venv"
+ignore = "E203,W503,W504"
+
+[tool.isort]
+line_length = 100
+skip = [".venv"]

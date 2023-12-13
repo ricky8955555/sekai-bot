@@ -1,0 +1,2 @@
+class AssetNotFound(Exception):
+    pass
