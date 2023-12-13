@@ -3,6 +3,8 @@ from typing import cast
 from sekai.core.models import ToSharedModel
 from sekai.core.models.card import Card, Deck
 from sekai.core.models.card import TotalPower as SharedTotalPower
+from sekai.core.models.live import Difficulty
+from sekai.core.models.user import Achievement
 from sekai.core.models.user import Profile as SharedProfile
 from sekai.core.models.user import UserInfo
 from sekai.utils import iters
@@ -157,7 +159,6 @@ class Profile(BaseSchema):
         )
         return UserInfo(
             id=self.user.user_id,
-            rank=self.user.rank,
             profile=profile,
         )
 
@@ -174,4 +175,20 @@ class Profile(BaseSchema):
             subleader=members[1],
             members=cast(tuple[Card, Card, Card, Card, Card], members),
             total_power=self.total_power.to_shared_model(),
+        )
+
+    def to_achievement(self) -> Achievement:
+        live_clears = {}
+        full_combos = {}
+        all_perfects = {}
+        for it in self.user_music_difficulty_clear_count:
+            difficulty = Difficulty[it.music_difficulty_type.upper()]
+            live_clears[difficulty] = it.live_clear
+            full_combos[difficulty] = it.full_combo
+            all_perfects[difficulty] = it.all_perfect
+        return Achievement(
+            rank=self.user.rank,
+            live_clears=live_clears,
+            full_combos=full_combos,
+            all_perfects=all_perfects,
         )

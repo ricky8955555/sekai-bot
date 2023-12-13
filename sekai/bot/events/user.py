@@ -11,3 +11,13 @@ class ProfileEvent(Event, prefix="profile"):
         if not command.args:
             raise ValueError
         return ProfileEvent(id=int(command.args.strip()))
+
+
+class AchievementEvent(Event, prefix="achievement"):
+    id: int
+
+    @classmethod
+    def from_command(cls, command: CommandObject) -> "AchievementEvent":
+        if not command.args:
+            raise ValueError
+        return AchievementEvent(id=int(command.args.strip()))

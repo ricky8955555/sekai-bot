@@ -63,17 +63,17 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
 <u><b>{deck.name}</b></u> (ID: {deck.id})
 
 Total Power:
-- Area Item Bonus: {deck.total_power.area_item_bonus}
-- Basic Card Total Power: {deck.total_power.basic_card_total_power}
-- Character Rank Bonus: {deck.total_power.character_rank_bonus}
-- Total Power: {deck.total_power.total_power}
+・Area Item Bonus: {deck.total_power.area_item_bonus}
+・Basic Card Total Power: {deck.total_power.basic_card_total_power}
+・Character Rank Bonus: {deck.total_power.character_rank_bonus}
+・Total Power: {deck.total_power.total_power}
 
 Members:
-- Leader: {member_infos[0]}
-- Subleader: {member_infos[1]}
-- Member 3: {member_infos[2]}
-- Member 4: {member_infos[3]}
-- Member 5: {member_infos[4]}
+・Leader: {member_infos[0]}
+・Subleader: {member_infos[1]}
+・Member 3: {member_infos[2]}
+・Member 4: {member_infos[3]}
+・Member 5: {member_infos[4]}
         """.strip(),
         parse_mode=ParseMode.HTML,
         reply_markup=markup,

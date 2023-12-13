@@ -43,3 +43,7 @@ class UnipjskApi:
     async def get_user_main_deck(self, id: int) -> Deck:
         profile = await self._get_profile(id)
         return profile.to_deck()
+
+    async def get_user_achievement(self, id: int) -> Achievement:
+        profile = await self._get_profile(id)
+        return profile.to_achievement()
