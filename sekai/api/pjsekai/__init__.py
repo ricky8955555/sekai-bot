@@ -1,5 +1,7 @@
 from aiohttp import ClientSession
+from async_lru import alru_cache
 
+from sekai.api import context
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character as SharedCharacter
@@ -27,6 +29,7 @@ class PjsekaiApi:
             raise ObjectNotFound
         return response
 
+    @alru_cache(ttl=context.cache_ttl)
     async def get_card_info(self, id: int) -> CardInfo:
         async with self.session as session:
             async with session.get("/database/master/cards", params={"id": id}) as response:
@@ -34,6 +37,7 @@ class PjsekaiApi:
                 query = self._check_response(BaseResponse[Card].model_validate_json(data))
                 return query.data[0].to_shared_model()
 
+    @alru_cache(ttl=context.cache_ttl)
     async def get_character(self, id: int) -> SharedCharacter:
         async with self.session as session:
             async with session.get(

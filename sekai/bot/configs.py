@@ -1,4 +1,4 @@
-from sekai.bot.config import Config
+from sekai.utils.config import Config
 
 
 class BotConfig(Config):

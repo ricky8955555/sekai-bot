@@ -1,9 +1,10 @@
 from aiohttp import ClientResponse, ClientSession
 from async_lru import alru_cache
 
+from sekai.api import context
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import Deck
-from sekai.core.models.user import UserInfo
+from sekai.core.models.user import Achievement, UserInfo
 
 from ._models.profile import Profile
 
@@ -26,7 +27,7 @@ class UnipjskApi:
             raise ObjectNotFound
         return response
 
-    @alru_cache
+    @alru_cache(ttl=context.cache_ttl)
     async def _get_profile(self, id: int) -> Profile:
         async with self.session as session:
             async with session.get(f"/api/user/{id}/profile") as response:
