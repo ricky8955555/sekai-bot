@@ -106,7 +106,7 @@ ID: {card.id}
 Character: {character.name}
 Gender: {character.gender.name.capitalize()}
 Height: {character.height} cm
-Released Date: {card.released}
+Release Date: {card.release}
 Rarity: {_RARITY[card.rarity]}
         """.strip(),
         parse_mode=ParseMode.HTML,
