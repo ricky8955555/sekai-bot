@@ -49,5 +49,5 @@ class Card(BaseSchema, ToSharedModel[CardInfo]):
             character=self.character_id,
             rarity=_RARITY[self.card_rarity_type],
             asset_id=self.assetbundle_name,
-            released=datetime.utcfromtimestamp(self.release_at / 1000),
+            release=datetime.utcfromtimestamp(self.release_at / 1000),
         )
