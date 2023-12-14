@@ -1,3 +1,4 @@
+import contextlib
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -35,8 +36,9 @@ async def profile(update: Message | CallbackQuery, event: ProfileEvent):
         reply_markup=markup,
         parse_mode=ParseMode.HTML,
     )
-    if isinstance(update, CallbackQuery):
-        await update.answer()
+    with contextlib.suppress(Exception):
+        if isinstance(update, CallbackQuery):
+            await update.answer()
 
 
 @router.callback_query(EventCallbackQuery(AchievementEvent))
@@ -73,5 +75,6 @@ async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
         reply_markup=markup,
         parse_mode=ParseMode.HTML,
     )
-    if isinstance(update, CallbackQuery):
-        await update.answer()
+    with contextlib.suppress(Exception):
+        if isinstance(update, CallbackQuery):
+            await update.answer()

@@ -78,10 +78,11 @@ Members:
         parse_mode=ParseMode.HTML,
         reply_markup=markup,
     )
-    if isinstance(update, CallbackQuery):
-        await update.answer()
     with contextlib.suppress(Exception):
         await hint_message.delete()
+    with contextlib.suppress(Exception):
+        if isinstance(update, CallbackQuery):
+            await update.answer()
 
 
 @router.callback_query(EventCallbackQuery(CardEvent))
@@ -111,7 +112,8 @@ Rarity: {_RARITY[card.rarity]}
         """.strip(),
         parse_mode=ParseMode.HTML,
     )
-    if isinstance(update, CallbackQuery):
-        await update.answer()
     with contextlib.suppress(Exception):
         await hint_message.delete()
+    with contextlib.suppress(Exception):
+        if isinstance(update, CallbackQuery):
+            await update.answer()
