@@ -26,7 +26,7 @@ class EventCommand(Command, Generic[_T_Event]):
         *values: CommandPatternType,  # type: ignore
         event: type[_T_Event],
         **kwargs: Any,
-    ):
+    ) -> None:
         self.event = event
         super().__init__(*values, **kwargs)
 
@@ -45,10 +45,7 @@ class EventCommand(Command, Generic[_T_Event]):
 class EventCallbackQuery(CallbackQueryFilter, Generic[_T_Event]):
     event: type[_T_Event]
 
-    def __init__(
-        self,
-        event: type[_T_Event],
-    ):
+    def __init__(self, event: type[_T_Event]) -> None:
         self.event = event
         super().__init__(callback_data=event)
 
