@@ -44,7 +44,8 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
     cutouts = [
         InputMediaPhoto(
             media=BufferedInputFile(
-                await context.pjsekai_assets.get_card_cutout(card.asset_id), card.asset_id
+                (asset := await context.assets.get_card_cutout(card.asset_id)).data,
+                f"{card.asset_id}.{asset.extension}",
             )
         )
         for card in cards
@@ -60,15 +61,15 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
     messages = await message.reply_media_group(cutouts)  # type: ignore
     await messages[0].reply(
         f"""
-<u><b>{deck.name}</b></u> (ID: {deck.id})
+<u><b><i>{deck.name}</i></b></u> (ID: {deck.id})
 
-Total Power:
+<u><b>=== Total Power ===</b></u>
 ・Area Item Bonus: {deck.total_power.area_item_bonus}
 ・Basic Card Total Power: {deck.total_power.basic_card_total_power}
 ・Character Rank Bonus: {deck.total_power.character_rank_bonus}
 ・Total Power: {deck.total_power.total_power}
 
-Members:
+<u><b>=== Members ===</b></u>
 ・Leader: {member_infos[0]}
 ・Subleader: {member_infos[1]}
 ・Member 3: {member_infos[2]}
@@ -95,8 +96,8 @@ async def card(update: Message | CallbackQuery, event: CardEvent):
     banners: list[InputMediaPhoto] = []
     for type in CardBannerType:
         with contextlib.suppress(AssetNotFound):
-            banner = await context.pjsekai_assets.get_card_banner(card.asset_id, type)
-            file = BufferedInputFile(banner, type.name)
+            banner = await context.assets.get_card_banner(card.asset_id, type)
+            file = BufferedInputFile(banner.data, f"{type.name}.{banner.extension}")
             banners.append(InputMediaPhoto(media=file))
     messages = await message.reply_media_group(banners)  # type: ignore
     await messages[0].edit_caption(
@@ -107,7 +108,7 @@ ID: {card.id}
 Character: {character.name}
 Gender: {character.gender.name.capitalize()}
 Height: {character.height} cm
-Release Date: {card.release}
+Release Time: {card.released}
 Rarity: {_RARITY[card.rarity]}
         """.strip(),
         parse_mode=ParseMode.HTML,

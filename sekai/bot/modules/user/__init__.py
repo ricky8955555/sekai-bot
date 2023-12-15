@@ -7,6 +7,7 @@ from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.card import DeckEvent
 from sekai.bot.events.user import AchievementEvent, ProfileEvent
+from sekai.bot.utils import humanize_enum
 from sekai.core.models.live import Difficulty
 
 router = context.module_manager.create_router()
@@ -47,7 +48,7 @@ async def profile(update: Message | CallbackQuery, event: ProfileEvent):
 async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
     def live_achievement(achievement: dict[Difficulty, int]) -> str:
         return "\n".join(
-            [f"・{diff.name.capitalize()}: {count}" for diff, count in achievement.items()]
+            [f"・{humanize_enum(diff)}: {count}" for diff, count in achievement.items()]
         )
 
     assert (message := update if isinstance(update, Message) else update.message)
@@ -63,7 +64,7 @@ async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
 <u><b><i>{user.profile.name}</i></b></u>
 <b>Rank:</b> {achieve.rank}
 
-<u><b>====== Live ======</b></u>
+<u><b>=== Live ===</b></u>
 <b>Live Clear:</b> (Total: {sum(achieve.live.live_clears.values())})
 {live_achievement(achieve.live.live_clears)}
 

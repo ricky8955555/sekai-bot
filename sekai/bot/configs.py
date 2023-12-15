@@ -9,3 +9,4 @@ class ServerConfig(Config):
     pjsekai_api: str | None = None
     uniprsk_api: str | None = None
     pjsekai_assets: str | None = None
+    sekaiworld_assets: str | None = None

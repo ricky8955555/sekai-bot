@@ -1,14 +1,12 @@
-import contextlib
-
 from aiohttp import ClientResponse, ClientSession
 
 from sekai.assets import Asset, AssetProvider, CardBannerType
 from sekai.assets.exc import AssetNotFound
 
-DEFAULT_SERVER = "https://assets.pjsek.ai"
+DEFAULT_SERVER = "https://storage.sekai.best"
 
 
-class PjsekaiAssets(AssetProvider):
+class SekaiworldAssets(AssetProvider):
     _server: str
 
     @property
@@ -31,47 +29,34 @@ class PjsekaiAssets(AssetProvider):
                 return await response.read()
 
     async def get_card_banner(self, id: str, type: CardBannerType) -> Asset:
-        path = f"/file/pjsekai-assets/startapp/character/member/{id}/"
+        path = f"/file/pjsekai-assets/startapp/character/member/{id}_rip/"
         match type:
             case CardBannerType.NORMAL:
                 path += "card_normal.png"
             case CardBannerType.SPECIAL_TRAINED:
                 path += "card_after_training.png"
-        return Asset(
-            await self._fetch_asset(path),
-            "png",
-        )
+        return Asset(await self._fetch_asset(path), "png")
 
     async def get_card_cutout(self, id: str) -> Asset:
         return Asset(
-            await self._fetch_asset(
-                f"/file/pjsekai-assets/startapp/character/member_cutout/{id}/normal/normal.png"
-            ),
+            await self._fetch_asset(f"/sekai-assets/character/member_cutout/{id}_rip/normal.png"),
             "png",
         )
 
     async def get_music(self, id: str) -> Asset:
-        raise NotImplementedError
+        return Asset(
+            await self._fetch_asset(f"/sekai-assets/music/long/{id}_rip/{id}.mp3"),
+            "mp3",
+        )
 
     async def get_music_preview(self, id: str) -> Asset:
-        with contextlib.suppress(AssetNotFound):
-            return Asset(
-                await self._fetch_asset(
-                    f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.flac"
-                ),
-                "flac",
-            )
-        with contextlib.suppress(AssetNotFound):
-            return Asset(
-                await self._fetch_asset(
-                    f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.wav"
-                ),
-                "wav",
-            )
-        raise AssetNotFound
+        return Asset(
+            await self._fetch_asset(f"/sekai-assets/music/short/{id}_rip/{id}_short.mp3"),
+            "mp3",
+        )
 
     async def get_music_cover(self, id: str) -> Asset:
         return Asset(
-            await self._fetch_asset(f"/file/pjsekai-assets/startapp/music/jacket/{id}/{id}.png"),
+            await self._fetch_asset(f"/sekai-assets/music/jacket/{id}_rip/{id}.png"),
             "png",
         )

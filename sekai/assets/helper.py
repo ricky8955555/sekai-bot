@@ -12,6 +12,7 @@ class AssetHelper(AssetProvider):
                 with contextlib.suppress(AssetNotFound, NotImplementedError):
                     return await method(*args, **kwargs)
             raise AssetNotFound
+
         return _wrapper
 
     def _wrap_methods(self, providers: list[AssetProvider]) -> None:

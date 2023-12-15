@@ -8,3 +8,6 @@ class Difficulty(IntEnum):
     EXPERT = auto()
     MASTER = auto()
     APPEND = auto()
+
+
+DifficultyLevels = dict[Difficulty, int]

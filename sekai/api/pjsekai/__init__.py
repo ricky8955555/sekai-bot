@@ -5,10 +5,13 @@ from sekai.api import context
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character as SharedCharacter
+from sekai.core.models.live import DifficultyLevels
+from sekai.core.models.music import MusicInfo, MusicVersion
 
 from ._models import BaseResponse, T_Model
 from ._models.card import Card
 from ._models.chara import Character
+from ._models.music import Music, MusicDifficulty, MusicVocal
 
 DEFAULT_API = "https://api.pjsek.ai"
 
@@ -46,3 +49,41 @@ class PjsekaiApi:
                 data = await response.read()
                 query = self._check_response(BaseResponse[Character].model_validate_json(data))
                 return query.data[0].to_shared_model()
+
+    @alru_cache(ttl=context.cache_ttl)
+    async def get_music_info(self, id: int) -> MusicInfo:
+        async with self.session as session:
+            async with session.get("/database/master/musics", params={"id": id}) as response:
+                data = await response.read()
+                query = self._check_response(BaseResponse[Music].model_validate_json(data))
+                return query.data[0].to_shared_model()
+
+    @alru_cache(ttl=context.cache_ttl)
+    async def get_music_version(self, id: int) -> MusicVersion:
+        async with self.session as session:
+            async with session.get("/database/master/musicVocals", params={"id": id}) as response:
+                data = await response.read()
+                query = self._check_response(BaseResponse[MusicVocal].model_validate_json(data))
+                return query.data[0].to_shared_model()
+
+    @alru_cache(ttl=context.cache_ttl)
+    async def get_music_versions(self, id: int) -> list[MusicVersion]:
+        async with self.session as session:
+            async with session.get(
+                "/database/master/musicVocals", params={"musicId": id}
+            ) as response:
+                data = await response.read()
+                query = self._check_response(BaseResponse[MusicVocal].model_validate_json(data))
+                return [vocal.to_shared_model() for vocal in query.data]
+
+    @alru_cache(ttl=context.cache_ttl)
+    async def get_music_difficulty_levels(self, id: int) -> DifficultyLevels:
+        async with self.session as session:
+            async with session.get(
+                "/database/master/musicDifficulties", params={"musicId": id}
+            ) as response:
+                data = await response.read()
+                query = self._check_response(
+                    BaseResponse[MusicDifficulty].model_validate_json(data)
+                )
+                return dict(vocal.to_difficulty_level_tuple() for vocal in query.data)

@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-yaml>=1.2.0",
     "async-lru>=2.0.4",
     "typing-extensions>=4.9.0",
+    "pillow>=10.1.0",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

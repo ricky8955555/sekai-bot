@@ -42,4 +42,4 @@ class CardInfo(SharedModel):
     character: int
     rarity: CardRarity
     asset_id: str
-    release: datetime
+    released: datetime
