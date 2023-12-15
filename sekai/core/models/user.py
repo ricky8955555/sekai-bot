@@ -13,8 +13,18 @@ class UserInfo(SharedModel):
     profile: Profile
 
 
-class Achievement(SharedModel):
-    rank: int
+class LiveAchievement(SharedModel):
     live_clears: dict[Difficulty, int]
     full_combos: dict[Difficulty, int]
     all_perfects: dict[Difficulty, int]
+
+
+class MultiliveAchievement(SharedModel):
+    mvp: int
+    superstar: int
+
+
+class Achievement(SharedModel):
+    rank: int
+    live: LiveAchievement
+    multilive: MultiliveAchievement

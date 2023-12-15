@@ -4,7 +4,7 @@ from sekai.core.models import ToSharedModel
 from sekai.core.models.card import Card, Deck
 from sekai.core.models.card import TotalPower as SharedTotalPower
 from sekai.core.models.live import Difficulty
-from sekai.core.models.user import Achievement
+from sekai.core.models.user import Achievement, LiveAchievement, MultiliveAchievement
 from sekai.core.models.user import Profile as SharedProfile
 from sekai.core.models.user import UserInfo
 from sekai.utils import iters
@@ -103,9 +103,15 @@ class UserHonor(BaseSchema):
     level: int
 
 
-class UserMultiLiveTopScoreCount(BaseSchema):
+class UserMultiLiveTopScoreCount(BaseSchema, ToSharedModel[MultiliveAchievement]):
     mvp: int
     super_star: int
+
+    def to_shared_model(self) -> MultiliveAchievement:
+        return MultiliveAchievement(
+            mvp=self.mvp,
+            superstar=self.super_star,
+        )
 
 
 class UserMusicDifficultyClearCount(BaseSchema):
@@ -186,9 +192,13 @@ class Profile(BaseSchema):
             live_clears[difficulty] = it.live_clear
             full_combos[difficulty] = it.full_combo
             all_perfects[difficulty] = it.all_perfect
-        return Achievement(
-            rank=self.user.rank,
+        live = LiveAchievement(
             live_clears=live_clears,
             full_combos=full_combos,
             all_perfects=all_perfects,
+        )
+        return Achievement(
+            rank=self.user.rank,
+            live=live,
+            multilive=self.user_multi_live_top_score_count.to_shared_model(),
         )

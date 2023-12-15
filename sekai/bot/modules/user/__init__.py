@@ -1,4 +1,5 @@
 import contextlib
+
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -59,18 +60,22 @@ async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
     markup = InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.edit_text(
         f"""
-<u><b><i>{user.profile.name}</i> Achievements</b></u>
-
+<u><b><i>{user.profile.name}</i></b></u>
 <b>Rank:</b> {achieve.rank}
 
-<b>Live Clear:</b> (Total: {sum(achieve.live_clears.values())})
-{live_achievement(achieve.live_clears)}
+<u><b>====== Live ======</b></u>
+<b>Live Clear:</b> (Total: {sum(achieve.live.live_clears.values())})
+{live_achievement(achieve.live.live_clears)}
 
-<b>Full Combo:</b> (Total: {sum(achieve.full_combos.values())})
-{live_achievement(achieve.full_combos)}
+<b>Full Combo:</b> (Total: {sum(achieve.live.full_combos.values())})
+{live_achievement(achieve.live.full_combos)}
 
-<b>All Perfect:</b> (Total: {sum(achieve.all_perfects.values())})
-{live_achievement(achieve.all_perfects)}
+<b>All Perfect:</b> (Total: {sum(achieve.live.all_perfects.values())})
+{live_achievement(achieve.live.all_perfects)}
+
+<u><b>=== Multilive ===</b></u>
+<b>MVP:</b> {achieve.multilive.mvp}
+<b>Superstar:</b> {achieve.multilive.superstar}
         """.strip(),
         reply_markup=markup,
         parse_mode=ParseMode.HTML,
