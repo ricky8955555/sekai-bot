@@ -6,6 +6,7 @@ from sekai.core.models import SharedModel
 class Gender(IntEnum):
     MALE = auto()
     FEMALE = auto()
+    SECRET = auto()
 
 
 class Name(SharedModel):

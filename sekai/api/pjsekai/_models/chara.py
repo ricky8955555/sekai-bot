@@ -6,11 +6,6 @@ from sekai.core.models.chara import Gender, Name
 
 from . import BaseSchema
 
-_GENDER = {
-    "male": Gender.MALE,
-    "female": Gender.FEMALE,
-}
-
 
 class Character(BaseSchema, ToSharedModel[SharedCharacter]):
     id: int
@@ -35,6 +30,6 @@ class Character(BaseSchema, ToSharedModel[SharedCharacter]):
         return SharedCharacter(
             id=self.id,
             name=name,
-            gender=_GENDER[self.gender],
+            gender=Gender[self.gender.upper()],
             height=self.height,
         )
