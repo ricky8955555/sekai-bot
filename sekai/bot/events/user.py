@@ -13,7 +13,7 @@ class ProfileEvent(Event, prefix="profile"):
         return ProfileEvent(id=int(command.args.strip()))
 
 
-class AchievementEvent(Event, prefix="achievement"):
+class AchievementEvent(Event, prefix="achieve"):
     id: int
 
     @classmethod

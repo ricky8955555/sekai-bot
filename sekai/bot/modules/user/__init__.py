@@ -42,7 +42,7 @@ async def profile(update: Message | CallbackQuery, event: ProfileEvent):
 
 
 @router.callback_query(EventCallbackQuery(AchievementEvent))
-@router.message(EventCommand("achievement", event=AchievementEvent))
+@router.message(EventCommand("achieve", event=AchievementEvent))
 async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
     def live_achievement(achievement: dict[Difficulty, int]) -> str:
         return "\n".join(
