@@ -4,8 +4,6 @@ from typing_extensions import Self
 
 from sekai.bot.environ import config_path
 
-config_path.mkdir(exist_ok=True)
-
 
 class Config(BaseModel):
     @classmethod

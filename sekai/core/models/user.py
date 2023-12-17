@@ -1,5 +1,5 @@
 from sekai.core.models import SharedModel
-from sekai.core.models.live import Difficulty
+from sekai.core.models.live import LiveDifficulty
 
 
 class Profile(SharedModel):
@@ -14,9 +14,9 @@ class UserInfo(SharedModel):
 
 
 class LiveAchievement(SharedModel):
-    live_clears: dict[Difficulty, int]
-    full_combos: dict[Difficulty, int]
-    all_perfects: dict[Difficulty, int]
+    live_clears: dict[LiveDifficulty, int]
+    full_combos: dict[LiveDifficulty, int]
+    all_perfects: dict[LiveDifficulty, int]
 
 
 class MultiliveAchievement(SharedModel):

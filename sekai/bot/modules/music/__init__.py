@@ -2,26 +2,34 @@ import contextlib
 from io import BytesIO
 
 from aiogram.enums import ParseMode
-from aiogram.types import (BufferedInputFile, CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, Message)
+from aiogram.filters.command import Command, CommandObject
+from aiogram.types import (
+    BufferedInputFile,
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 from PIL import Image
 
 from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.music import MusicDownloadEvent, MusicDownloadType, MusicEvent
-from sekai.bot.utils import humanize_enum
+from sekai.bot.utils.callback import CallbackQueryTaskManager
+from sekai.bot.utils.enum import humanize_enum
 from sekai.core.models.music import MusicVersion
 
 router = context.module_manager.create_router()
 
+tasks = CallbackQueryTaskManager(router, "music_task", "task is destroyed.")
+
 
 @router.callback_query(EventCallbackQuery(MusicEvent))
-@router.message(EventCommand("music", event=MusicEvent))
-async def music(update: Message | CallbackQuery, event: MusicEvent):
+async def music_id(update: Message | CallbackQuery, event: MusicEvent):
     async def version_singers(versions: list[MusicVersion]) -> list[list[str]]:
         all_singers = {singer for version in versions for singer in version.singers}
         all_charas = {
-            singer: await context.pjsekai_api.get_character(singer) for singer in all_singers
+            singer: await context.master_api.get_character(singer) for singer in all_singers
         }
         return [
             [all_charas[singer].name.full_name for singer in version.singers]
@@ -30,16 +38,16 @@ async def music(update: Message | CallbackQuery, event: MusicEvent):
 
     assert (message := update if isinstance(update, Message) else update.message)
     hint_message = await message.reply("waiting for handling...")
-    music = await context.pjsekai_api.get_music_info(event.id)
-    versions = await context.pjsekai_api.get_music_versions(event.id)
+    music = await context.master_api.get_music_info(event.id)
+    versions = await context.master_api.get_versions_of_music(event.id)
     ver_singers = await version_singers(versions)
     versions_str = "\n".join(
         f"・<b>{humanize_enum(version.vocal_type)} ver.</b> " f"({', '.join(singers)})"
         for version, singers in zip(versions, ver_singers)
     )
-    levels = await context.pjsekai_api.get_music_difficulty_levels(event.id)
+    lives = await context.master_api.get_live_infos_of_music(event.id)
     diffculties = "\n".join(
-        f"・<b>{humanize_enum(diff)}:</b> Lv.{level}" for diff, level in levels.items()
+        f"・<b>{humanize_enum(live.difficulty)}:</b> Lv.{live.level}" for live in lives
     )
     cover = await context.assets.get_music_cover(music.asset_id)
     cover_file = BufferedInputFile(cover.data, f"{music.asset_id}.{cover.extension}")
@@ -79,13 +87,60 @@ async def music(update: Message | CallbackQuery, event: MusicEvent):
         await hint_message.delete()
 
 
+async def music_search(message: Message, command: CommandObject):
+    async def next_music(update: CallbackQuery | Message):
+        assert (message := update if isinstance(update, Message) else update.message)
+        if not (music := await anext(it, None)):
+            if isinstance(update, Message):
+                return await message.edit_text("no result found.")
+            assert message.reply_markup
+            buttons = message.reply_markup.inline_keyboard[0][:1]  # in known condition.
+            markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
+            await message.edit_reply_markup(reply_markup=markup)
+            return await update.answer("no more result available.")
+        task = tasks.create_task(next_music, expired_after=context.search_config.expiry)
+        buttons = [
+            InlineKeyboardButton(text="Detail", callback_data=MusicEvent(id=music.id).pack()),
+            InlineKeyboardButton(text="Next", callback_data=task.callback_data),
+        ]
+        markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
+        await message.edit_text(
+            f"""
+<u><b><i>{music.title}</i></b></u>
+
+<u><b>=== Information ===</b></u>
+・<b>Composer:</b> {music.composer}
+・<b>Arranger:</b> {music.arranger}
+・<b>Lyricist:</b> {music.lyricist}
+            """.strip(),
+            parse_mode=ParseMode.HTML,
+            reply_markup=markup,
+        )
+
+    if not command.args:
+        return
+    message = await message.reply("waiting for handling...")
+    it = aiter(
+        context.master_api.search_music_info_by_title(command.args, context.search_config.music)
+    )
+    await next_music(message)
+
+
+@router.message(Command("music"))
+async def music(message: Message, command: CommandObject):
+    with contextlib.suppress(TypeError, ValueError):
+        event = MusicEvent.from_command(command)
+        return await music_id(message, event)
+    return await music_search(message, command)
+
+
 @router.callback_query(EventCallbackQuery(MusicDownloadEvent))
 @router.message(EventCommand("musicdown", event=MusicDownloadEvent))
 async def music_download(update: Message | CallbackQuery, event: MusicDownloadEvent):
     assert (message := update if isinstance(update, Message) else update.message)
     hint_message = await message.reply("waiting for handling...")
-    version = await context.pjsekai_api.get_music_version(event.id)
-    singers = [await context.pjsekai_api.get_character(singer) for singer in version.singers]
+    version = await context.master_api.get_music_version(event.id)
+    singers = [await context.master_api.get_character(singer) for singer in version.singers]
     match event.type:
         case MusicDownloadType.FULL:
             music_asset = await context.assets.get_music(version.asset_id)
@@ -103,7 +158,7 @@ async def music_download(update: Message | CallbackQuery, event: MusicDownloadEv
             ]
             caption = None
     singers_str = ", ".join(singer.name.full_name for singer in singers)
-    music = await context.pjsekai_api.get_music_info(version.music_id)
+    music = await context.master_api.get_music_info(version.music_id)
     filename = f"{singers_str} - {music.title}.{music_asset.extension}"
     music_file = BufferedInputFile(music_asset.data, filename)
     cover = await context.assets.get_music_cover(music.asset_id)

@@ -1,7 +1,9 @@
 from enum import IntEnum, auto
 
+from sekai.core.models import SharedModel
 
-class Difficulty(IntEnum):
+
+class LiveDifficulty(IntEnum):
     EASY = auto()
     NORMAL = auto()
     HARD = auto()
@@ -10,4 +12,8 @@ class Difficulty(IntEnum):
     APPEND = auto()
 
 
-DifficultyLevels = dict[Difficulty, int]
+class LiveInfo(SharedModel):
+    id: int
+    music_id: int
+    difficulty: LiveDifficulty
+    level: int

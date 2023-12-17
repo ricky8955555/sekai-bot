@@ -19,6 +19,7 @@ class MusicVersion(SharedModel):
 
 
 class MusicInfo(SharedModel):
+    id: int
     title: str
     lyricist: str
     composer: str

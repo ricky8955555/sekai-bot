@@ -1,11 +1,12 @@
-from aiohttp import ClientSession
-from async_lru import alru_cache
+from typing import Any, AsyncIterable, cast
 
-from sekai.api import context
+from aiohttp import ClientSession
+
+from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character as SharedCharacter
-from sekai.core.models.live import DifficultyLevels
+from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
 from ._models import BaseResponse, T_Model
@@ -16,7 +17,7 @@ from ._models.music import Music, MusicDifficulty, MusicVocal
 DEFAULT_API = "https://api.pjsek.ai"
 
 
-class PjsekaiApi:
+class PjsekaiApi(MasterApi):
     _api: str
 
     def __init__(self, api: str | None = None) -> None:
@@ -26,64 +27,96 @@ class PjsekaiApi:
     def session(self) -> ClientSession:
         return ClientSession(self._api)
 
-    @staticmethod
-    def _check_response(response: BaseResponse[T_Model]) -> BaseResponse[T_Model]:
-        if not response.data:
-            raise ObjectNotFound
-        return response
+    async def _iter(
+        self, path: str, type: type[T_Model], limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[T_Model]:
+        while True:
+            async with self.session as session:
+                async with session.get(path, params={"$limit": limit, "$skip": skip}) as response:
+                    resp_type = cast(BaseResponse[T_Model], BaseResponse.__class_getitem__(type))
+                    json = await response.read()
+                    data = resp_type.model_validate_json(json)
+                    for model in data.data:
+                        yield model
+                    if data.skip + data.limit >= data.total:
+                        return
+            skip += limit
 
-    @alru_cache(ttl=context.cache_ttl)
+    async def _get(
+        self, path: str, type: type[T_Model], *args: Any, **kwargs: Any
+    ) -> list[T_Model]:
+        async with self.session as session:
+            async with session.get(path, *args, **kwargs) as response:
+                resp_type = cast(BaseResponse[T_Model], BaseResponse.__class_getitem__(type))
+                json = await response.read()
+                data = resp_type.model_validate_json(json)
+                if not data.data:
+                    raise ObjectNotFound
+                return data.data
+
+    async def iter_card_infos(self, limit: int = 20, skip: int = 0) -> AsyncIterable[CardInfo]:
+        async for model in self._iter("/database/master/cards", Card, limit, skip):
+            yield model.to_shared_model()
+
     async def get_card_info(self, id: int) -> CardInfo:
-        async with self.session as session:
-            async with session.get("/database/master/cards", params={"id": id}) as response:
-                data = await response.read()
-                query = self._check_response(BaseResponse[Card].model_validate_json(data))
-                return query.data[0].to_shared_model()
+        models = await self._get("/database/master/cards", Card, params={"id": id})
+        return models[0].to_shared_model()
 
-    @alru_cache(ttl=context.cache_ttl)
+    def search_card_info_by_title(self, keywords: str) -> AsyncIterable[CardInfo]:
+        raise NotImplementedError
+
+    async def iter_characters(
+        self, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[SharedCharacter]:
+        async for model in self._iter("/database/master/gameCharacters", Character, limit, skip):
+            yield model.to_shared_model()
+
     async def get_character(self, id: int) -> SharedCharacter:
-        async with self.session as session:
-            async with session.get(
-                "/database/master/gameCharacters", params={"id": id}
-            ) as response:
-                data = await response.read()
-                query = self._check_response(BaseResponse[Character].model_validate_json(data))
-                return query.data[0].to_shared_model()
+        models = await self._get("/database/master/gameCharacters", Character, params={"id": id})
+        return models[0].to_shared_model()
 
-    @alru_cache(ttl=context.cache_ttl)
+    def search_character_by_title(self, keywords: str) -> AsyncIterable[SharedCharacter]:
+        raise NotImplementedError
+
+    async def iter_music_infos(self, limit: int = 20, skip: int = 0) -> AsyncIterable[MusicInfo]:
+        async for model in self._iter("/database/master/musics", Music, limit, skip):
+            yield model.to_shared_model()
+
     async def get_music_info(self, id: int) -> MusicInfo:
-        async with self.session as session:
-            async with session.get("/database/master/musics", params={"id": id}) as response:
-                data = await response.read()
-                query = self._check_response(BaseResponse[Music].model_validate_json(data))
-                return query.data[0].to_shared_model()
+        models = await self._get("/database/master/musics", Music, params={"id": id})
+        return models[0].to_shared_model()
 
-    @alru_cache(ttl=context.cache_ttl)
+    def search_music_info_by_title(self, keywords: str) -> AsyncIterable[MusicInfo]:
+        raise NotImplementedError
+
+    async def iter_music_versions(
+        self, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[MusicVersion]:
+        async for model in self._iter("/database/master/musicVocals", MusicVocal, limit, skip):
+            yield model.to_shared_model()
+
     async def get_music_version(self, id: int) -> MusicVersion:
-        async with self.session as session:
-            async with session.get("/database/master/musicVocals", params={"id": id}) as response:
-                data = await response.read()
-                query = self._check_response(BaseResponse[MusicVocal].model_validate_json(data))
-                return query.data[0].to_shared_model()
+        models = await self._get("/database/master/musicVocals", MusicVocal, params={"id": id})
+        return models[0].to_shared_model()
 
-    @alru_cache(ttl=context.cache_ttl)
-    async def get_music_versions(self, id: int) -> list[MusicVersion]:
-        async with self.session as session:
-            async with session.get(
-                "/database/master/musicVocals", params={"musicId": id}
-            ) as response:
-                data = await response.read()
-                query = self._check_response(BaseResponse[MusicVocal].model_validate_json(data))
-                return [vocal.to_shared_model() for vocal in query.data]
+    async def get_versions_of_music(self, id: int) -> list[MusicVersion]:
+        models = await self._get("/database/master/musicVocals", MusicVocal, params={"musicId": id})
+        return [vocal.to_shared_model() for vocal in models]
 
-    @alru_cache(ttl=context.cache_ttl)
-    async def get_music_difficulty_levels(self, id: int) -> DifficultyLevels:
-        async with self.session as session:
-            async with session.get(
-                "/database/master/musicDifficulties", params={"musicId": id}
-            ) as response:
-                data = await response.read()
-                query = self._check_response(
-                    BaseResponse[MusicDifficulty].model_validate_json(data)
-                )
-                return dict(vocal.to_difficulty_level_tuple() for vocal in query.data)
+    async def iter_live_infos(self, limit: int = 20, skip: int = 0) -> AsyncIterable[LiveInfo]:
+        async for model in self._iter(
+            "/database/master/musicDifficulties", MusicDifficulty, limit, skip
+        ):
+            yield model.to_shared_model()
+
+    async def get_live_info(self, id: int) -> LiveInfo:
+        models = await self._get(
+            "/database/master/musicDifficulties", MusicDifficulty, params={"id": id}
+        )
+        return models[0].to_shared_model()
+
+    async def get_live_infos_of_music(self, id: int) -> list[LiveInfo]:
+        models = await self._get(
+            "/database/master/musicDifficulties", MusicDifficulty, params={"musicId": id}
+        )
+        return [vocal.to_shared_model() for vocal in models]

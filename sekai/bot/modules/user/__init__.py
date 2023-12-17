@@ -7,8 +7,8 @@ from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.card import DeckEvent
 from sekai.bot.events.user import AchievementEvent, ProfileEvent
-from sekai.bot.utils import humanize_enum
-from sekai.core.models.live import Difficulty
+from sekai.bot.utils.enum import humanize_enum
+from sekai.core.models.live import LiveDifficulty
 
 router = context.module_manager.create_router()
 
@@ -18,7 +18,7 @@ router = context.module_manager.create_router()
 async def profile(update: Message | CallbackQuery, event: ProfileEvent):
     assert (message := update if isinstance(update, Message) else update.message)
     message = await message.reply("waiting for handling...")
-    user = await context.uniprsk_api.get_user_info(event.id)
+    user = await context.user_api.get_user_info(event.id)
     buttons = [
         [
             InlineKeyboardButton(
@@ -46,15 +46,15 @@ async def profile(update: Message | CallbackQuery, event: ProfileEvent):
 @router.callback_query(EventCallbackQuery(AchievementEvent))
 @router.message(EventCommand("achieve", event=AchievementEvent))
 async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
-    def live_achievement(achievement: dict[Difficulty, int]) -> str:
+    def live_achievement(achievement: dict[LiveDifficulty, int]) -> str:
         return "\n".join(
             [f"・{humanize_enum(diff)}: {count}" for diff, count in achievement.items()]
         )
 
     assert (message := update if isinstance(update, Message) else update.message)
     message = await message.reply("waiting for handling...")
-    user = await context.uniprsk_api.get_user_info(event.id)
-    achieve = await context.uniprsk_api.get_user_achievement(event.id)
+    user = await context.user_api.get_user_info(event.id)
+    achieve = await context.user_api.get_user_achievement(event.id)
     buttons = [
         [InlineKeyboardButton(text="Profile", callback_data=ProfileEvent(id=user.id).pack())]
     ]

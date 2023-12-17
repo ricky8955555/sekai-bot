@@ -163,3 +163,4 @@ cython_debug/
 
 # sekai-bot user data
 /config
+/data

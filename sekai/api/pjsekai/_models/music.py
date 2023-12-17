@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sekai.core.models import ToSharedModel
-from sekai.core.models.live import Difficulty
+from sekai.core.models.live import LiveDifficulty, LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion, VocalType
 
 from . import BaseSchema
@@ -61,11 +61,12 @@ class Music(BaseSchema, ToSharedModel[MusicInfo]):
     published_at: int
     released_at: int
     live_stage_id: int
-    filler_sec: int
+    filler_sec: float
     is_newly_written_music: bool
 
     def to_shared_model(self) -> MusicInfo:
         return MusicInfo(
+            id=self.id,
             title=self.title,
             lyricist=self.lyricist,
             composer=self.composer,
@@ -76,7 +77,7 @@ class Music(BaseSchema, ToSharedModel[MusicInfo]):
         )
 
 
-class MusicDifficulty(BaseSchema):
+class MusicDifficulty(BaseSchema, ToSharedModel[LiveInfo]):
     id: int
     music_id: int
     music_difficulty: str
@@ -84,5 +85,10 @@ class MusicDifficulty(BaseSchema):
     release_condition_id: int
     total_note_count: int
 
-    def to_difficulty_level_tuple(self):
-        return (Difficulty[self.music_difficulty.upper()], self.play_level)
+    def to_shared_model(self) -> LiveInfo:
+        return LiveInfo(
+            id=self.id,
+            music_id=self.music_id,
+            difficulty=LiveDifficulty[self.music_difficulty.upper()],
+            level=self.play_level,
+        )

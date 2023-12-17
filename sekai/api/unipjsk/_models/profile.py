@@ -3,7 +3,7 @@ from typing import cast
 from sekai.core.models import ToSharedModel
 from sekai.core.models.card import Card, Deck
 from sekai.core.models.card import TotalPower as SharedTotalPower
-from sekai.core.models.live import Difficulty
+from sekai.core.models.live import LiveDifficulty
 from sekai.core.models.user import Achievement, LiveAchievement, MultiliveAchievement
 from sekai.core.models.user import Profile as SharedProfile
 from sekai.core.models.user import UserInfo
@@ -188,7 +188,7 @@ class Profile(BaseSchema):
         full_combos = {}
         all_perfects = {}
         for it in self.user_music_difficulty_clear_count:
-            difficulty = Difficulty[it.music_difficulty_type.upper()]
+            difficulty = LiveDifficulty[it.music_difficulty_type.upper()]
             live_clears[difficulty] = it.live_clear
             full_combos[difficulty] = it.full_combo
             all_perfects[difficulty] = it.all_perfect
