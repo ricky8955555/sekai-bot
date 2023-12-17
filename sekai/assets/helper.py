@@ -1,16 +1,18 @@
 import contextlib
-from typing import Any, Awaitable, Callable
+from inspect import isawaitable
+from typing import Any, Callable
 
 from sekai.assets import AssetProvider
 from sekai.assets.exc import AssetNotFound
 
 
 class AssetHelper(AssetProvider):
-    def _wrap(self, methods: list[Callable[..., Awaitable[Any]]]):
+    def _wrap(self, methods: list[Callable[..., Any]]):
         async def _wrapper(*args: Any, **kwargs: Any) -> Any:
             for method in methods:
                 with contextlib.suppress(AssetNotFound, NotImplementedError):
-                    return await method(*args, **kwargs)
+                    result = method(*args, **kwargs)
+                    return await result if isawaitable(result) else result
             raise AssetNotFound
 
         return _wrapper
