@@ -1,6 +1,6 @@
 import contextlib
 from io import BytesIO
-from typing import AsyncIterable, Callable
+from typing import AsyncIterable
 
 from aiogram.enums import ParseMode
 from aiogram.filters.command import Command, CommandObject
@@ -13,7 +13,6 @@ from aiogram.types import (
 )
 from PIL import Image
 
-from sekai.api.helper.search import MatchMethod
 from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.music import MusicDownloadEvent, MusicDownloadType, MusicEvent
@@ -89,12 +88,9 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         await hint_message.delete()
 
 
-async def music_search(
+async def iter_music(
     message: Message,
-    command: CommandObject,
-    *,
-    search_music_info: Callable[[str, MatchMethod], AsyncIterable[MusicInfo]] =
-        context.master_api.search_music_info_by_title,
+    iterable: AsyncIterable[MusicInfo],
 ):
     async def next_music(update: CallbackQuery | Message):
         assert (message := update if isinstance(update, Message) else update.message)
@@ -125,27 +121,31 @@ async def music_search(
             reply_markup=markup,
         )
 
-    if not command.args:
-        return
     message = await message.reply("waiting for handling...")
-    it = aiter(search_music_info(command.args, context.search_config.music))
+    it = aiter(iterable)
     await next_music(message)
 
 
 @router.message(Command("music"))
 async def music(message: Message, command: CommandObject):
+    if not command.args:
+        return
     with contextlib.suppress(TypeError, ValueError):
         event = MusicEvent.from_command(command)
         return await music_id(message, event)
-    return await music_search(message, command)
+    return await iter_music(
+        message,
+        context.master_api.search_music_info_by_title(command.args, context.search_config.music),
+    )
 
 
 @router.message(Command("artist"))
 async def artist(message: Message, command: CommandObject):
-    return await music_search(
+    if not command.args:
+        return
+    return await iter_music(
         message,
-        command,
-        search_music_info=context.master_api.search_music_info_by_artist,
+        context.master_api.search_music_info_by_artist(command.args, context.search_config.music),
     )
 
 

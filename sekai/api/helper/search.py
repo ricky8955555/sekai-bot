@@ -1,5 +1,4 @@
-import re
-from enum import IntEnum
+from enum import IntEnum, auto
 from typing import AsyncIterable, Callable, TypeVar
 
 from sekai.api import MasterApi
@@ -12,12 +11,9 @@ _T_MasterApi = TypeVar("_T_MasterApi", bound=MasterApi)
 
 
 class MatchMethod(IntEnum):
-    FULL_MATCH = 0
-    PARTIAL_MATCH = 1
-    SPLIT_FULL_MATCH = 2
-    SPLIT_PART_FULL_MATCH = 3
-    SPLIT_PART_PARTIAL_MATCH = 4
-    REGEX_MATCH = 5
+    FULL_MATCH = auto()
+    PART_FULL_MATCH = auto()
+    PART_PARTIAL_MATCH = auto()
 
 
 DEFAULT_METHOD = MatchMethod.FULL_MATCH
@@ -26,41 +22,33 @@ DEFAULT_METHOD = MatchMethod.FULL_MATCH
 def make_master_api_search_helper(base: type[_T_MasterApi]):
     class MasterApiSearchHelper(base):
         @staticmethod
-        def match(keywords: str, data: str, method: MatchMethod) -> bool:
+        def match(keywords: str, data: list[str], method: MatchMethod) -> bool:
             match method:
                 case MatchMethod.FULL_MATCH:
-                    return keywords == data
-                case MatchMethod.PARTIAL_MATCH:
-                    return keywords in data
-                case MatchMethod.SPLIT_FULL_MATCH:
-                    return not set(keywords.split()).difference(data.split())
-                case MatchMethod.SPLIT_PART_FULL_MATCH:
-                    return bool(set(keywords.split()).intersection(data.split()))
-                case MatchMethod.SPLIT_PART_PARTIAL_MATCH:
-                    keyword_parts = keywords.split()
-                    data_parts = data.split()
+                    return not set(data).difference(keywords.split())
+                case MatchMethod.PART_FULL_MATCH:
+                    return bool(set(data).intersection(keywords.split()))
+                case MatchMethod.PART_PARTIAL_MATCH:
                     return all(
-                        any(keyword in data for data in data_parts) for keyword in keyword_parts
+                        any(keyword in part for part in data) for keyword in keywords.split()
                     )
-                case MatchMethod.REGEX_MATCH:
-                    return bool(re.match(keywords, data))
 
         @staticmethod
         async def _search(
             iterator: AsyncIterable[T_Model],
             keywords: str,
-            name: Callable[[T_Model], str],
+            data: Callable[[T_Model], list[str]],
             method: MatchMethod,
         ) -> AsyncIterable[T_Model]:
             async for model in iterator:
-                if MasterApiSearchHelper.match(keywords, name(model), method):
+                if MasterApiSearchHelper.match(keywords, data(model), method):
                     yield model
 
         def search_music_info_by_title(
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[MusicInfo]:
             return self._search(
-                super().iter_music_infos(), keywords, lambda model: model.title, method
+                super().iter_music_infos(), keywords, lambda model: [model.title], method
             )
 
         def search_music_info_by_artist(
@@ -69,8 +57,8 @@ def make_master_api_search_helper(base: type[_T_MasterApi]):
             return self._search(
                 super().iter_music_infos(),
                 keywords,
-                # Prioritize composer over lyricist over arranger
-                lambda model: ' '.join((model.composer, model.lyricist, model.arranger)),
+                # priority: composer > lyricist > arranger
+                lambda model: [model.composer, model.lyricist, model.arranger],
                 method,
             )
 
@@ -78,14 +66,14 @@ def make_master_api_search_helper(base: type[_T_MasterApi]):
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[CardInfo]:
             return self._search(
-                super().iter_card_infos(), keywords, lambda model: model.title, method
+                super().iter_card_infos(), keywords, lambda model: [model.title], method
             )
 
         def search_character_by_title(
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[Character]:
             return self._search(
-                super().iter_characters(), keywords, lambda model: model.name.full_name, method
+                super().iter_characters(), keywords, lambda model: [model.name.full_name], method
             )
 
     return MasterApiSearchHelper

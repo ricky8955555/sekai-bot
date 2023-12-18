@@ -17,7 +17,8 @@ class ServerConfig(Config):
 
 
 class SearchConfig(Config):
-    music: MatchMethod = MatchMethod.SPLIT_PART_PARTIAL_MATCH
+    music: MatchMethod = MatchMethod.PART_PARTIAL_MATCH
+    artist: MatchMethod = MatchMethod.PART_FULL_MATCH
     character: MatchMethod = MatchMethod.FULL_MATCH
-    card: MatchMethod = MatchMethod.SPLIT_PART_PARTIAL_MATCH
+    card: MatchMethod = MatchMethod.PART_PARTIAL_MATCH
     expiry: timedelta | None = timedelta(minutes=3)
