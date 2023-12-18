@@ -1,6 +1,6 @@
 import contextlib
 from io import BytesIO
-from typing import Callable
+from typing import AsyncIterable, Callable
 
 from aiogram.enums import ParseMode
 from aiogram.filters.command import Command, CommandObject
@@ -93,7 +93,7 @@ async def music_search(
     message: Message,
     command: CommandObject,
     *,
-    search_music_info: Callable[[str, MatchMethod], MusicInfo] =
+    search_music_info: Callable[[str, MatchMethod], AsyncIterable[MusicInfo]] =
         context.master_api.search_music_info_by_title,
 ):
     async def next_music(update: CallbackQuery | Message):
