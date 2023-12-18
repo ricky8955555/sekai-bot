@@ -63,6 +63,17 @@ def make_master_api_search_helper(base: type[_T_MasterApi]):
                 super().iter_music_infos(), keywords, lambda model: model.title, method
             )
 
+        def search_music_info_by_artist(
+            self, keywords: str, method: MatchMethod = DEFAULT_METHOD
+        ) -> AsyncIterable[MusicInfo]:
+            return self._search(
+                super().iter_music_infos(),
+                keywords,
+                # Prioritize composer over lyricist over arranger
+                lambda model: ' '.join((model.composer, model.lyricist, model.arranger)),
+                method,
+            )
+
         def search_card_info_by_title(
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[CardInfo]:

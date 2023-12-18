@@ -1,5 +1,6 @@
 import contextlib
 from io import BytesIO
+from typing import Callable
 
 from aiogram.enums import ParseMode
 from aiogram.filters.command import Command, CommandObject
@@ -12,12 +13,13 @@ from aiogram.types import (
 )
 from PIL import Image
 
+from sekai.api.helper.search import MatchMethod
 from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.music import MusicDownloadEvent, MusicDownloadType, MusicEvent
 from sekai.bot.utils.callback import CallbackQueryTaskManager
 from sekai.bot.utils.enum import humanize_enum
-from sekai.core.models.music import MusicVersion
+from sekai.core.models.music import MusicInfo, MusicVersion
 
 router = context.module_manager.create_router()
 
@@ -87,7 +89,13 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         await hint_message.delete()
 
 
-async def music_search(message: Message, command: CommandObject):
+async def music_search(
+    message: Message,
+    command: CommandObject,
+    *,
+    search_music_info: Callable[[str, MatchMethod], MusicInfo] =
+        context.master_api.search_music_info_by_title,
+):
     async def next_music(update: CallbackQuery | Message):
         assert (message := update if isinstance(update, Message) else update.message)
         if not (music := await anext(it, None)):
@@ -120,9 +128,7 @@ async def music_search(message: Message, command: CommandObject):
     if not command.args:
         return
     message = await message.reply("waiting for handling...")
-    it = aiter(
-        context.master_api.search_music_info_by_title(command.args, context.search_config.music)
-    )
+    it = aiter(search_music_info(command.args, context.search_config.music))
     await next_music(message)
 
 
@@ -132,6 +138,15 @@ async def music(message: Message, command: CommandObject):
         event = MusicEvent.from_command(command)
         return await music_id(message, event)
     return await music_search(message, command)
+
+
+@router.message(Command("artist"))
+async def artist(message: Message, command: CommandObject):
+    return await music_search(
+        message,
+        command,
+        search_music_info=context.master_api.search_music_info_by_artist,
+    )
 
 
 @router.callback_query(EventCallbackQuery(MusicDownloadEvent))
