@@ -6,7 +6,7 @@ from sekai.assets.exc import AssetNotFound
 DEFAULT_SERVER = "https://storage.sekai.best"
 
 
-class SekaiworldAssets(AssetProvider):
+class SekaiViewerAssets(AssetProvider):
     _server: str
 
     @property
