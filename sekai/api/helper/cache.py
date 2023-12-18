@@ -49,8 +49,8 @@ class CachingMasterApi(MasterApi):
         if not path.exists():
             return None
         assert path.is_file(), f"{path} is not a file."
-        async with async_open(path, "r") as fp:
-            data = await fp.read()
+        async with async_open(path, "r") as afp:
+            data = await afp.read()
         wrapped_type = cast(Cache[T_Model], Cache.__class_getitem__(type))
         cache = wrapped_type.model_validate_json(data)
         self._cache[type] = cache
@@ -63,8 +63,8 @@ class CachingMasterApi(MasterApi):
         assert not path.exists() or path.is_file(), f"{path} is not a file."
         cache = Cache(data=models, last=datetime.now())
         data = cache.model_dump_json()
-        async with async_open(path, "w") as fp:
-            await fp.write(data)
+        async with async_open(path, "w") as afp:
+            await afp.write(data)
         self._cache[typ] = cache
         return cache
 
