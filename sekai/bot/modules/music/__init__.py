@@ -145,7 +145,7 @@ async def artist(message: Message, command: CommandObject):
         return
     return await iter_music(
         message,
-        context.master_api.search_music_info_by_artist(command.args, context.search_config.music),
+        context.master_api.search_music_info_by_artist(command.args, context.search_config.artist),
     )
 
 
