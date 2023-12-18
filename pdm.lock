@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:4e5ffee37fc328b21de4e56b67020109098b616c5d1f80839df5e86652b4256f"
+content_hash = "sha256:70c6353ef208893ef7a018f35735a6d3a932a7dd38b2e54aca9745a851401f26"
 
 [[package]]
 name = "aiofile"
@@ -131,6 +131,19 @@ summary = "Reusable constraint types to use with typing.Annotated"
 files = [
     {file = "annotated_types-0.6.0-py3-none-any.whl", hash = "sha256:0641064de18ba7a25dee8f96403ebc39113d0cb953a01429249d5c7564666a43"},
     {file = "annotated_types-0.6.0.tar.gz", hash = "sha256:563339e807e53ffd9c267e99fc6d9ea23eb8443c08f112651963e24e22f84a5d"},
+]
+
+[[package]]
+name = "async-lru"
+version = "2.0.4"
+requires_python = ">=3.8"
+summary = "Simple LRU cache for asyncio"
+dependencies = [
+    "typing-extensions>=4.0.0; python_version < \"3.11\"",
+]
+files = [
+    {file = "async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627"},
+    {file = "async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224"},
 ]
 
 [[package]]
