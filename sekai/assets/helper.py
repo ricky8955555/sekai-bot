@@ -23,7 +23,7 @@ class AssetHelper(AssetProvider):
             wrapped_method = self._wrap(methods)
             setattr(self, method, wrapped_method)
 
-    def __new__(cls, providers: list[AssetProvider]):
+    def __new__(cls, providers: list[AssetProvider]) -> "AssetProvider":
         cls.__abstractmethods__ = frozenset()
         obj = super().__new__(cls)
         obj._wrap_methods(providers)
