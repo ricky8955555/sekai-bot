@@ -6,12 +6,12 @@ from sekai.assets.helper import AssetHelper
 from sekai.assets.pjsekai import PjsekaiAssets
 from sekai.assets.sekaiviewer import SekaiViewerAssets
 from sekai.bot.configs import BotConfig, SearchConfig, ServerConfig
-from sekai.bot.environ import cache_path
+from sekai.bot.environ import cache_path, config_path
 from sekai.bot.module import ModuleManager
 
-bot_config = BotConfig.load("bot")
-server_config = ServerConfig.load("server")
-search_config = SearchConfig.load("search")
+bot_config = BotConfig.load(config_path / "bot")
+server_config = ServerConfig.load(config_path / "server")
+search_config = SearchConfig.load(config_path / "search")
 
 module_manager: ModuleManager
 
