@@ -22,7 +22,7 @@ class Cache(BaseModel, Generic[T_Model]):
     last: datetime
 
 
-@dataclass
+@dataclass(frozen=True)
 class CachingStrategy:
     expiry: timedelta = timedelta(days=1)
     write_in_background: bool = True
