@@ -18,7 +18,7 @@ module_manager: ModuleManager
 master_api = make_master_api_search_helper(CachingMasterApi)(
     PjsekaiApi(server_config.pjsekai_api),
     cache_path,
-    CachingStrategy(server_config.cache_expiry),
+    CachingStrategy(server_config.cache_expiry, server_config.write_cache_in_background),
 )  # type: ignore
 user_api = UnipjskApi(server_config.uniprsk_api)
 

@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -23,6 +24,7 @@ class Cache(BaseModel, Generic[T_Model]):
 @dataclass
 class CachingStrategy:
     expiry: timedelta = timedelta(days=1)
+    write_in_background: bool = True
 
 
 class CachingMasterApi(MasterApi):
@@ -64,7 +66,9 @@ class CachingMasterApi(MasterApi):
         cache = Cache(data=models, last=datetime.now())
         data = cache.model_dump_json()
         async with async_open(path, "w") as afp:
-            await afp.write(data)
+            task = asyncio.create_task(afp.write(data))
+            if not self.strategy.write_in_background:
+                await task
         self._cache[typ] = cache
         return cache
 
