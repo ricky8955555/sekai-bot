@@ -62,16 +62,19 @@ class CachingMasterApi(MasterApi):
         return cache
 
     async def _set_cache(self, models: list[T_Model]) -> Cache[T_Model]:
+        async def write():
+            data = cache.model_dump_json()
+            async with async_open(path, "w") as afp:
+                await afp.write(data)
+
         assert models, "no model given."
         typ = type(models[0])
         path = (self.path / typ.__name__).with_suffix(".json")
         assert not path.exists() or path.is_file(), f"{path} is not a file."
         cache = Cache(data=models, last=datetime.now())
-        data = cache.model_dump_json()
-        async with async_open(path, "w") as afp:
-            task = asyncio.create_task(afp.write(data))
-            if not self.strategy.write_in_background:
-                await task
+        task = asyncio.create_task(write())
+        if not self.strategy.write_in_background:
+            await task
         self._cache[typ] = cache
         return cache
 
