@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Lock
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -32,6 +33,7 @@ class CachingMasterApi(MasterApi):
     upstream: MasterApi
     strategy: CachingStrategy
     _cache: dict[type[SharedModel], Cache[Any]]  # it is okay to iterate to find one
+    _locks: dict[type[SharedModel], Lock]
 
     def __init__(
         self, upstream: MasterApi, cache_path: Path, strategy: CachingStrategy | None = None
@@ -40,6 +42,7 @@ class CachingMasterApi(MasterApi):
         self.path = cache_path
         self.strategy = strategy or CachingStrategy()
         self._cache = {}
+        self._locks = {}
 
     def _expired(self, cache: Cache[T_Model]) -> bool:
         return (datetime.now() - cache.last) > self.strategy.expiry
@@ -75,9 +78,14 @@ class CachingMasterApi(MasterApi):
     async def _get_or_fetch_models(
         self, type: type[T_Model], upstream: AsyncIterable[T_Model]
     ) -> AsyncIterable[T_Model]:
-        if not (cache := await self._get_cache(type)) or self._expired(cache):
-            models = [model async for model in upstream]
-            cache = await self._set_cache(models)
+        lock = self._locks.setdefault(type, Lock())
+        try:
+            await lock.acquire()
+            if not (cache := await self._get_cache(type)) or self._expired(cache):
+                models = [model async for model in upstream]
+                cache = await self._set_cache(models)
+        finally:
+            lock.release()
         for model in cache.data:
             yield model
 
