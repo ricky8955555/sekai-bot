@@ -146,7 +146,8 @@ class Profile(BaseSchema):
     user: User
     user_bonds_honors: list[UserBondsHonor]
     user_cards: list[UserCard]
-    user_challenge_live_solo_result: UserChallengeLiveSoloResult
+    # user_challenge_live_solo_result can be not existed
+    user_challenge_live_solo_result: UserChallengeLiveSoloResult | None = None
     user_challenge_live_solo_stages: list[UserChallengeLiveSoloStage]
     user_config: UserConfig
     user_custom_profile_cards: list[UserCustomProfileCard]
