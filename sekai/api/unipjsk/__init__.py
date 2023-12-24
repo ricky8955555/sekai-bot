@@ -1,4 +1,4 @@
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 from async_lru import alru_cache
 
 from sekai.api.exc import ObjectNotFound
@@ -23,17 +23,17 @@ class UnipjskApi:
         return ClientSession(self._api)
 
     @staticmethod
-    def _check_response(response: ClientResponse) -> ClientResponse:
-        if not response.ok:
+    def _check_data(data: bytes) -> bytes:
+        if data.strip() == b"{}":
             raise ObjectNotFound
-        return response
+        return data
 
     @alru_cache(ttl=CACHE_TTL)
     async def _get_profile(self, id: int) -> Profile:
         async with self.session as session:
             async with session.get(f"/api/user/{id}/profile") as response:
-                response = self._check_response(response)
-                data = await response.read()
+                response = response
+                data = self._check_data(await response.read())
                 profile = Profile.model_validate_json(data)
                 return profile
 
