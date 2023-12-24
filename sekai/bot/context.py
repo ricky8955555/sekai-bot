@@ -8,7 +8,7 @@ from sekai.assets.sekaiviewer import SekaiViewerAssets
 from sekai.bot.configs import BotConfig, CommonConfig, SearchConfig, ServerConfig
 from sekai.bot.environ import cache_path, config_path
 from sekai.bot.module import ModuleManager
-from sekai.bot.storage import StorageStrategy
+from sekai.bot.storage.mapping import StorageStrategy
 
 bot_config = BotConfig.load(config_path / "bot")
 server_config = ServerConfig.load(config_path / "server")

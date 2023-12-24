@@ -7,7 +7,7 @@ from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.account import AccountBindEvent
 from sekai.bot.events.card import DeckEvent
 from sekai.bot.events.user import AchievementEvent, ProfileEvent
-from sekai.bot.storage import MappingDataStorage
+from sekai.bot.storage.mapping import MappingDataStorage
 
 from .models import Account
 
