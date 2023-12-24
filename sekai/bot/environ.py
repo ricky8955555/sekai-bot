@@ -13,3 +13,6 @@ data_path.mkdir(exist_ok=True)
 
 cache_path = data_path / "cache"
 cache_path.mkdir(exist_ok=True)
+
+module_data_path = data_path / "module"
+module_data_path.mkdir(exist_ok=True)

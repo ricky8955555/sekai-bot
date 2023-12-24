@@ -5,13 +5,15 @@ from sekai.api.unipjsk import UnipjskApi
 from sekai.assets.helper import AssetHelper
 from sekai.assets.pjsekai import PjsekaiAssets
 from sekai.assets.sekaiviewer import SekaiViewerAssets
-from sekai.bot.configs import BotConfig, SearchConfig, ServerConfig
+from sekai.bot.configs import BotConfig, CommonConfig, SearchConfig, ServerConfig
 from sekai.bot.environ import cache_path, config_path
 from sekai.bot.module import ModuleManager
+from sekai.bot.storage import StorageStrategy
 
 bot_config = BotConfig.load(config_path / "bot")
 server_config = ServerConfig.load(config_path / "server")
 search_config = SearchConfig.load(config_path / "search")
+common_config = CommonConfig.load(config_path / "common")
 
 module_manager: ModuleManager
 
@@ -28,3 +30,5 @@ assets = AssetHelper(
         PjsekaiAssets(server_config.pjsekai_assets),
     ]
 )  # type: ignore
+
+storage_strategy = StorageStrategy(common_config.write_data_in_background)

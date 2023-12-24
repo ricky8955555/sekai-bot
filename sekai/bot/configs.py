@@ -23,3 +23,7 @@ class SearchConfig(Config):
     character: MatchMethod = MatchMethod.FULL_MATCH
     card: MatchMethod = MatchMethod.PART_PARTIAL_MATCH
     expiry: timedelta | None = timedelta(minutes=3)
+
+
+class CommonConfig(Config):
+    write_data_in_background: bool = True
