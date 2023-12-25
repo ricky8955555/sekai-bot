@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 
 
-class CardBannerType(IntEnum):
+class CardPattern(IntEnum):
     NORMAL = auto()
     SPECIAL_TRAINED = auto()
 
@@ -16,11 +16,11 @@ class Asset:
 
 class AssetProvider(abc.ABC):
     @abc.abstractmethod
-    async def get_card_banner(self, id: str, type: CardBannerType) -> Asset:
+    async def get_card_banner(self, id: str, pattern: CardPattern) -> Asset:
         ...
 
     @abc.abstractmethod
-    async def get_card_cutout(self, id: str) -> Asset:
+    async def get_card_cutout(self, id: str, pattern: CardPattern) -> Asset:
         ...
 
     @abc.abstractmethod

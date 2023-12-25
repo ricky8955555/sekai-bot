@@ -2,7 +2,7 @@ import contextlib
 
 from aiohttp import ClientResponse, ClientSession
 
-from sekai.assets import Asset, AssetProvider, CardBannerType
+from sekai.assets import Asset, AssetProvider, CardPattern
 from sekai.assets.exc import AssetNotFound
 
 DEFAULT_SERVER = "https://assets.pjsek.ai"
@@ -30,23 +30,27 @@ class PjsekaiAssets(AssetProvider):
                 response = self._check_response(response)
                 return await response.read()
 
-    async def get_card_banner(self, id: str, type: CardBannerType) -> Asset:
+    async def get_card_banner(self, id: str, pattern: CardPattern) -> Asset:
         path = f"/file/pjsekai-assets/startapp/character/member/{id}/"
-        match type:
-            case CardBannerType.NORMAL:
+        match pattern:
+            case CardPattern.NORMAL:
                 path += "card_normal.png"
-            case CardBannerType.SPECIAL_TRAINED:
+            case CardPattern.SPECIAL_TRAINED:
                 path += "card_after_training.png"
         return Asset(
             await self._fetch_asset(path),
             "png",
         )
 
-    async def get_card_cutout(self, id: str) -> Asset:
+    async def get_card_cutout(self, id: str, pattern: CardPattern) -> Asset:
+        path = f"/file/pjsekai-assets/startapp/character/member_cutout/{id}/"
+        match pattern:
+            case CardPattern.NORMAL:
+                path += "normal/normal.png"
+            case CardPattern.SPECIAL_TRAINED:
+                path += "after_training/after_training.png"
         return Asset(
-            await self._fetch_asset(
-                f"/file/pjsekai-assets/startapp/character/member_cutout/{id}/normal/normal.png"
-            ),
+            await self._fetch_asset(path),
             "png",
         )
 

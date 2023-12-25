@@ -11,7 +11,7 @@ from aiogram.types import (
     Message,
 )
 
-from sekai.assets import CardBannerType
+from sekai.assets import CardPattern
 from sekai.assets.exc import AssetNotFound
 from sekai.bot import context
 from sekai.bot.events import EventCallbackQuery, EventCommand
@@ -54,11 +54,18 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
     cutouts = [
         InputMediaPhoto(
             media=BufferedInputFile(
-                (asset := await context.assets.get_card_cutout(card.asset_id)).data,
+                (
+                    asset := await context.assets.get_card_cutout(
+                        card.asset_id,
+                        CardPattern.SPECIAL_TRAINED
+                        if member.special_trained
+                        else CardPattern.NORMAL,
+                    )
+                ).data,
                 f"{card.asset_id}.{asset.extension}",
             )
         )
-        for card in cards
+        for member, card in zip(deck.members, cards)
     ]
     member_infos = [
         f"{chara.name} ("
@@ -103,10 +110,10 @@ async def card_id(update: Message | CallbackQuery, event: CardEvent):
     card = await context.master_api.get_card_info(event.id)
     character = await context.master_api.get_character(card.character)
     banners: list[InputMediaPhoto] = []
-    for type in CardBannerType:
+    for pattern in CardPattern:
         with contextlib.suppress(AssetNotFound):
-            banner = await context.assets.get_card_banner(card.asset_id, type)
-            file = BufferedInputFile(banner.data, f"{type.name}.{banner.extension}")
+            banner = await context.assets.get_card_banner(card.asset_id, pattern)
+            file = BufferedInputFile(banner.data, f"{pattern.name}.{banner.extension}")
             banners.append(InputMediaPhoto(media=file))
     messages = await message.reply_media_group(banners)  # type: ignore
     await messages[0].edit_caption(

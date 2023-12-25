@@ -1,6 +1,6 @@
 from aiohttp import ClientResponse, ClientSession
 
-from sekai.assets import Asset, AssetProvider, CardBannerType
+from sekai.assets import Asset, AssetProvider, CardPattern
 from sekai.assets.exc import AssetNotFound
 
 DEFAULT_SERVER = "https://storage.sekai.best"
@@ -28,20 +28,23 @@ class SekaiViewerAssets(AssetProvider):
                 response = self._check_response(response)
                 return await response.read()
 
-    async def get_card_banner(self, id: str, type: CardBannerType) -> Asset:
+    async def get_card_banner(self, id: str, pattern: CardPattern) -> Asset:
         path = f"/file/pjsekai-assets/startapp/character/member/{id}_rip/"
-        match type:
-            case CardBannerType.NORMAL:
+        match pattern:
+            case CardPattern.NORMAL:
                 path += "card_normal.png"
-            case CardBannerType.SPECIAL_TRAINED:
+            case CardPattern.SPECIAL_TRAINED:
                 path += "card_after_training.png"
         return Asset(await self._fetch_asset(path), "png")
 
-    async def get_card_cutout(self, id: str) -> Asset:
-        return Asset(
-            await self._fetch_asset(f"/sekai-assets/character/member_cutout/{id}_rip/normal.png"),
-            "png",
-        )
+    async def get_card_cutout(self, id: str, pattern: CardPattern) -> Asset:
+        path = f"/sekai-assets/character/member_cutout/{id}_rip/"
+        match pattern:
+            case CardPattern.NORMAL:
+                path += "normal.png"
+            case CardPattern.SPECIAL_TRAINED:
+                path += "after_training.png"
+        return Asset(await self._fetch_asset(path), "png")
 
     async def get_music(self, id: str) -> Asset:
         return Asset(
