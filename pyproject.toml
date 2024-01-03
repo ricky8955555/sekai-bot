@@ -11,9 +11,9 @@ dependencies = [
     "pydantic>=2.5.2",
     "pydantic-yaml>=1.2.0",
     "typing-extensions>=4.9.0",
-    "pillow>=10.1.0",
     "aiofile>=3.8.8",
     "async-lru>=2.0.4",
+    "python-ffmpeg>=2.0.9",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

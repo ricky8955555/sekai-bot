@@ -12,7 +12,13 @@ from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models import SharedModel, T_Model
 from sekai.core.models.card import CardInfo
-from sekai.core.models.chara import Character
+from sekai.core.models.chara import (
+    Character,
+    CharacterInfo,
+    CharacterType,
+    ExtraCharacter,
+    GameCharacter,
+)
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
@@ -117,14 +123,30 @@ class CachingMasterApi(MasterApi):
     def search_card_info_by_title(self, keywords: str) -> AsyncIterable[CardInfo]:
         raise NotImplementedError
 
-    def iter_characters(self) -> AsyncIterable[Character]:
-        return self._get_or_fetch_models(Character, self.upstream.iter_characters())
+    def iter_game_characters(self) -> AsyncIterable[GameCharacter]:
+        return self._get_or_fetch_models(GameCharacter, self.upstream.iter_game_characters())
 
-    async def get_character(self, id: int) -> Character:
-        return await self._get_model(self.iter_characters(), lambda model: model.id == id)
+    async def get_game_character(self, id: int) -> GameCharacter:
+        return await self._get_model(self.iter_game_characters(), lambda model: model.id == id)
 
-    def search_character_by_title(self, keywords: str) -> AsyncIterable[Character]:
-        raise NotImplementedError
+    def iter_extra_characters(self) -> AsyncIterable[ExtraCharacter]:
+        return self._get_or_fetch_models(ExtraCharacter, self.upstream.iter_extra_characters())
+
+    async def get_extra_character(self, id: int) -> ExtraCharacter:
+        return await self._get_model(self.iter_extra_characters(), lambda model: model.id == id)
+
+    async def iter_character_infos(self) -> AsyncIterable[CharacterInfo]:
+        async for model in self.iter_game_characters():
+            yield model
+        async for model in self.iter_extra_characters():
+            yield model
+
+    async def get_character_info(self, character: Character) -> CharacterInfo:
+        match character.type:
+            case CharacterType.GAME:
+                return await self.get_game_character(character.id)
+            case CharacterType.EXTRA:
+                return await self.get_extra_character(character.id)
 
     def iter_music_infos(self) -> AsyncIterable[MusicInfo]:
         return self._get_or_fetch_models(MusicInfo, self.upstream.iter_music_infos())

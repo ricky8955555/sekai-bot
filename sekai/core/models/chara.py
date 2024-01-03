@@ -9,20 +9,37 @@ class Gender(IntEnum):
     SECRET = auto()
 
 
+class CharacterType(IntEnum):
+    GAME = auto()
+    EXTRA = auto()
+
+
 class Name(SharedModel):
-    first_name: str | None = None
-    given_name: str
+    first_name: str
+    last_name: str | None = None
 
     @property
     def full_name(self) -> str:
-        return f"{self.first_name or ''}{self.given_name}"
+        return f"{self.first_name}{self.last_name or ''}"
 
     def __str__(self) -> str:
         return self.full_name
 
 
-class Character(SharedModel):
+class CharacterInfo(SharedModel):
     id: int
     name: Name
+
+
+class GameCharacter(CharacterInfo):
     gender: Gender
     height: int
+
+
+class ExtraCharacter(CharacterInfo):
+    pass
+
+
+class Character(SharedModel):
+    id: int
+    type: CharacterType

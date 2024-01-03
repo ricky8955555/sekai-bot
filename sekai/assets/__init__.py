@@ -8,10 +8,13 @@ class CardPattern(IntEnum):
     SPECIAL_TRAINED = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Asset:
     data: bytes
     extension: str
+
+    def __post_init__(self) -> None:
+        assert self.extension.startswith("."), "extension should starts with '.'."
 
 
 class AssetProvider(abc.ABC):

@@ -1,3 +1,5 @@
+from aiogram import Bot
+
 from sekai.api.helper.cache import CachingMasterApi, CachingStrategy
 from sekai.api.helper.search import make_master_api_search_helper
 from sekai.api.pjsekai import PjsekaiApi
@@ -8,12 +10,14 @@ from sekai.assets.sekaiviewer import SekaiViewerAssets
 from sekai.bot.configs import BotConfig, CommonConfig, SearchConfig, ServerConfig
 from sekai.bot.environ import cache_path, config_path
 from sekai.bot.module import ModuleManager
-from sekai.bot.storage.mapping import StorageStrategy
+from sekai.bot.storage import StorageStrategy
 
 bot_config = BotConfig.load(config_path / "bot")
 server_config = ServerConfig.load(config_path / "server")
 search_config = SearchConfig.load(config_path / "search")
 common_config = CommonConfig.load(config_path / "common")
+
+bot: Bot
 
 module_manager: ModuleManager
 

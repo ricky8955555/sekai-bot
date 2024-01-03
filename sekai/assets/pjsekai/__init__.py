@@ -39,7 +39,7 @@ class PjsekaiAssets(AssetProvider):
                 path += "card_after_training.png"
         return Asset(
             await self._fetch_asset(path),
-            "png",
+            ".png",
         )
 
     async def get_card_cutout(self, id: str, pattern: CardPattern) -> Asset:
@@ -51,7 +51,7 @@ class PjsekaiAssets(AssetProvider):
                 path += "after_training/after_training.png"
         return Asset(
             await self._fetch_asset(path),
-            "png",
+            ".png",
         )
 
     async def get_music(self, id: str) -> Asset:
@@ -63,19 +63,19 @@ class PjsekaiAssets(AssetProvider):
                 await self._fetch_asset(
                     f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.flac"
                 ),
-                "flac",
+                ".flac",
             )
         with contextlib.suppress(AssetNotFound):
             return Asset(
                 await self._fetch_asset(
                     f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.wav"
                 ),
-                "wav",
+                ".wav",
             )
         raise AssetNotFound
 
     async def get_music_cover(self, id: str) -> Asset:
         return Asset(
             await self._fetch_asset(f"/file/pjsekai-assets/startapp/music/jacket/{id}/{id}.png"),
-            "png",
+            ".png",
         )

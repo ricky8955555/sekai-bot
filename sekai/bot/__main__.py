@@ -7,10 +7,12 @@ from sekai.bot.module import ModuleManager
 
 
 async def main():
-    bot = Bot(context.bot_config.token)
+    context.bot = bot = Bot(context.bot_config.token)
     dispatcher = Dispatcher()
-    context.module_manager = ModuleManager(dispatcher)
-    context.module_manager.import_modules_from(environ.module_path)
+
+    context.module_manager = module_manager = ModuleManager(dispatcher)
+    module_manager.import_modules_from(environ.module_path)
+
     await dispatcher.start_polling(bot)
 
 

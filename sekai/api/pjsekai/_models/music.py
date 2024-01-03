@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from sekai.core.models import ToSharedModel
+from sekai.core.models.chara import Character as SharedCharacter
+from sekai.core.models.chara import CharacterType
 from sekai.core.models.live import LiveDifficulty, LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion, VocalType
 
@@ -10,6 +12,12 @@ VOCAL_TYPES = {
     "original_song": VocalType.VIRTUAL_SINGER,
     "virtual_singer": VocalType.VIRTUAL_SINGER,
     "sekai": VocalType.SEKAI,
+}
+
+
+CHARACTER_TYPES = {
+    "game_character": CharacterType.GAME,
+    "outside_character": CharacterType.EXTRA,
 }
 
 
@@ -34,11 +42,15 @@ class MusicVocal(BaseSchema, ToSharedModel[MusicVersion]):
     archive_published_at: int
 
     def to_shared_model(self) -> MusicVersion:
+        singers = [
+            SharedCharacter(id=chara.character_id, type=CHARACTER_TYPES[chara.character_type])
+            for chara in self.characters
+        ]
         return MusicVersion(
             id=self.id,
             music_id=self.music_id,
             vocal_type=VOCAL_TYPES.get(self.music_vocal_type, VocalType.OTHER),
-            singers=[chara.character_id for chara in self.characters],
+            singers=singers,
             asset_id=self.assetbundle_name,
         )
 

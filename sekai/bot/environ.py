@@ -16,3 +16,6 @@ cache_path.mkdir(exist_ok=True)
 
 module_data_path = data_path / "module"
 module_data_path.mkdir(exist_ok=True)
+
+file_storage_data_path = data_path / "files"
+file_storage_data_path.mkdir(exist_ok=True)

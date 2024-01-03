@@ -13,15 +13,21 @@ from aiogram.types import (
 
 from sekai.assets import CardPattern
 from sekai.assets.exc import AssetNotFound
-from sekai.bot import context
+from sekai.bot import context, environ
 from sekai.bot.events import EventCallbackQuery, EventCommand
 from sekai.bot.events.card import CardEvent, DeckEvent
+from sekai.bot.storage.telegram import TelegramFileStorage
 from sekai.bot.utils.callback import CallbackQueryTaskManager
 from sekai.core.models.card import CardRarity
+
+from .models import CardPhotoQuery
 
 router = context.module_manager.create_router()
 
 tasks = CallbackQueryTaskManager(router, "card_task", "task is destroyed.")
+card_photos = TelegramFileStorage(
+    CardPhotoQuery, context.bot, environ.file_storage_data_path / "card", context.storage_strategy
+)
 
 
 _RARITY = {
@@ -40,7 +46,7 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
     hint_message = await message.reply("waiting for handling...")
     deck = await context.user_api.get_user_main_deck(event.id)
     cards = [await context.master_api.get_card_info(card.id) for card in deck.members]
-    charas = [await context.master_api.get_character(card.character) for card in cards]
+    charas = [await context.master_api.get_game_character(card.character) for card in cards]
     buttons = [
         InlineKeyboardButton(
             text=chara.name.full_name,
@@ -51,22 +57,23 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
         for card, chara in zip(cards, charas)
     ]
     markup = InlineKeyboardMarkup(inline_keyboard=[buttons[:2], buttons[2:]])
-    cutouts = [
-        InputMediaPhoto(
-            media=BufferedInputFile(
-                (
-                    asset := await context.assets.get_card_cutout(
-                        card.asset_id,
-                        CardPattern.SPECIAL_TRAINED
-                        if member.special_trained
-                        else CardPattern.NORMAL,
-                    )
-                ).data,
-                f"{card.asset_id}.{asset.extension}",
-            )
+    queries: list[CardPhotoQuery] = [
+        CardPhotoQuery(
+            asset_id=card.asset_id,
+            pattern=(CardPattern.SPECIAL_TRAINED if member.special_trained else CardPattern.NORMAL),
+            cutout=True,
         )
         for member, card in zip(deck.members, cards)
     ]
+    cutouts: list[InputMediaPhoto] = []
+    for query in queries:
+        file = await card_photos.get(query)
+        if not file:
+            with contextlib.suppress(AssetNotFound):
+                cutout = await context.assets.get_card_cutout(query.asset_id, query.pattern)
+                file = BufferedInputFile(cutout.data, f"{query.pattern.name}{cutout.extension}")
+        if file:
+            cutouts.append(InputMediaPhoto(media=file))
     member_infos = [
         f"{chara.name} ("
         + f"Lv.{member.level}"
@@ -76,6 +83,7 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
         for (chara, member) in zip(charas, deck.members)
     ]
     messages = await message.reply_media_group(cutouts)  # type: ignore
+    await card_photos.update_all(queries, messages)
     await messages[0].reply(
         f"""
 <u><b><i>{deck.name}</i></b></u> (ID: {deck.id})
@@ -108,20 +116,30 @@ async def card_id(update: Message | CallbackQuery, event: CardEvent):
     assert (message := update if isinstance(update, Message) else update.message)
     hint_message = await message.reply("waiting for handling...")
     card = await context.master_api.get_card_info(event.id)
-    character = await context.master_api.get_character(card.character)
+    character = await context.master_api.get_game_character(card.character)
+    queries: list[CardPhotoQuery] = [
+        CardPhotoQuery(asset_id=card.asset_id, pattern=pattern, cutout=False)
+        for pattern in CardPattern
+    ]
     banners: list[InputMediaPhoto] = []
-    for pattern in CardPattern:
-        with contextlib.suppress(AssetNotFound):
-            banner = await context.assets.get_card_banner(card.asset_id, pattern)
-            file = BufferedInputFile(banner.data, f"{pattern.name}.{banner.extension}")
+    for query in queries:
+        file = await card_photos.get(query)
+        if not file:
+            with contextlib.suppress(AssetNotFound):
+                banner = await context.assets.get_card_banner(query.asset_id, query.pattern)
+                file = BufferedInputFile(banner.data, f"{query.pattern.name}{banner.extension}")
+        if file:
             banners.append(InputMediaPhoto(media=file))
+        else:
+            queries.remove(query)
     messages = await message.reply_media_group(banners)  # type: ignore
+    await card_photos.update_all(queries, messages)
     await messages[0].edit_caption(
         caption=f"""
 <u><b>{card.title}</b></u>
 
 ID: {card.id}
-Character: {character.name}
+GameCharacter: {character.name}
 Gender: {character.gender.name.capitalize()}
 Height: {character.height} cm
 Release Time: {card.released}
@@ -153,13 +171,13 @@ async def card_search(message: Message, command: CommandObject):
             InlineKeyboardButton(text="Next", callback_data=task.callback_data),
         ]
         markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
-        character = await context.master_api.get_character(card.character)
+        character = await context.master_api.get_game_character(card.character)
         await message.edit_text(
             f"""
 <u><b>{card.title}</b></u>
 
 ID: {card.id}
-Character: {character.name}
+GameCharacter: {character.name}
             """.strip(),
             parse_mode=ParseMode.HTML,
             reply_markup=markup,

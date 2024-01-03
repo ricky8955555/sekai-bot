@@ -1,20 +1,15 @@
 import asyncio
-import typing
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, Mapping, TypeVar, cast
 
 from aiofile import async_open
 from pydantic import BaseModel, RootModel
 
+from sekai.bot.storage import StorageStrategy
+
 _T_Key = TypeVar("_T_Key")
 _T_Value = TypeVar("_T_Value")
 _T_Default = TypeVar("_T_Default")
-
-
-@dataclass(frozen=True)
-class StorageStrategy:
-    write_in_background: bool = True
 
 
 class _PairModel(BaseModel, Generic[_T_Key, _T_Value]):
@@ -31,17 +26,21 @@ class MappingDataStorage(Generic[_T_Key, _T_Value]):
     strategy: StorageStrategy
     _mapping: dict[_T_Key, _T_Value] | None
     _model: type[_T_Value]
+    _mapping_data_type: type[_MappingData[_T_Key, _T_Value]]
 
-    def __init__(self, path: Path, strategy: StorageStrategy | None = None) -> None:
+    def __init__(
+        self,
+        key: type[_T_Key],
+        value: type[_T_Value],
+        path: Path,
+        strategy: StorageStrategy | None = None,
+    ) -> None:
         self.path = path if path.suffix else path.with_suffix(".json")
         self.strategy = strategy or StorageStrategy()
         self._mapping = None
-
-    @property
-    def _mapping_data_type(self) -> type[_MappingData[_T_Key, _T_Value]]:
-        assert (cls := getattr(self, "__orig_class__")), "no '__orig_class__' found."
-        assert len(types := typing.get_args(cls)) == 2, "unsatisfied generics got."
-        return cast(type[_MappingData[_T_Key, _T_Value]], _MappingData.__class_getitem__(types))
+        self._mapping_data_type = cast(
+            type[_MappingData[_T_Key, _T_Value]], _MappingData.__class_getitem__((key, value))
+        )
 
     async def _load_file(self) -> dict[_T_Key, _T_Value]:
         if not self.path.exists():

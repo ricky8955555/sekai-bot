@@ -2,7 +2,7 @@ import abc
 from typing import AsyncIterable
 
 from sekai.core.models.card import CardInfo, Deck
-from sekai.core.models.chara import Character
+from sekai.core.models.chara import Character, CharacterInfo, ExtraCharacter, GameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.user import Achievement, UserInfo
@@ -36,15 +36,27 @@ class MasterApi(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def iter_characters(self) -> AsyncIterable[Character]:
+    def iter_game_characters(self) -> AsyncIterable[GameCharacter]:
         ...
 
     @abc.abstractmethod
-    async def get_character(self, id: int) -> Character:
+    async def get_game_character(self, id: int) -> GameCharacter:
         ...
 
     @abc.abstractmethod
-    def search_character_by_title(self, keywords: str) -> AsyncIterable[Character]:
+    def iter_extra_characters(self) -> AsyncIterable[ExtraCharacter]:
+        ...
+
+    @abc.abstractmethod
+    async def get_extra_character(self, id: int) -> ExtraCharacter:
+        ...
+
+    @abc.abstractmethod
+    def iter_character_infos(self) -> AsyncIterable[CharacterInfo]:
+        ...
+
+    @abc.abstractmethod
+    async def get_character_info(self, character: Character) -> CharacterInfo:
         ...
 
     @abc.abstractmethod

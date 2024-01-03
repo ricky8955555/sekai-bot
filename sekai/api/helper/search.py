@@ -4,7 +4,6 @@ from typing import AsyncIterable, Callable, TypeVar
 from sekai.api import MasterApi
 from sekai.core.models import T_Model
 from sekai.core.models.card import CardInfo
-from sekai.core.models.chara import Character
 from sekai.core.models.music import MusicInfo
 
 _T_MasterApi = TypeVar("_T_MasterApi", bound=MasterApi)
@@ -67,13 +66,6 @@ def make_master_api_search_helper(base: type[_T_MasterApi]):
         ) -> AsyncIterable[CardInfo]:
             return self._search(
                 super().iter_card_infos(), keywords, lambda model: [model.title], method
-            )
-
-        def search_character_by_title(
-            self, keywords: str, method: MatchMethod = DEFAULT_METHOD
-        ) -> AsyncIterable[Character]:
-            return self._search(
-                super().iter_characters(), keywords, lambda model: [model.name.full_name], method
             )
 
     return MasterApiSearchHelper

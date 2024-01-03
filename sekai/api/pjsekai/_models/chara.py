@@ -1,13 +1,14 @@
 from pydantic import Field
 
 from sekai.core.models import ToSharedModel
-from sekai.core.models.chara import Character as SharedCharacter
+from sekai.core.models.chara import ExtraCharacter
+from sekai.core.models.chara import GameCharacter as SharedGameCharacter
 from sekai.core.models.chara import Gender, Name
 
 from . import BaseSchema
 
 
-class Character(BaseSchema, ToSharedModel[SharedCharacter]):
+class GameCharacter(BaseSchema, ToSharedModel[SharedGameCharacter]):
     id: int
     seq: int
     resource_id: int
@@ -25,11 +26,27 @@ class Character(BaseSchema, ToSharedModel[SharedCharacter]):
     unit: str
     support_unit_type: str
 
-    def to_shared_model(self) -> SharedCharacter:
-        name = Name(first_name=self.first_name, given_name=self.given_name)
-        return SharedCharacter(
+    def to_shared_model(self) -> SharedGameCharacter:
+        if self.first_name:
+            name = Name(first_name=self.first_name, last_name=self.given_name)
+        else:
+            name = Name(first_name=self.given_name)
+        return SharedGameCharacter(
             id=self.id,
             name=name,
             gender=Gender[self.gender.upper()],
             height=self.height,
+        )
+
+
+class OutsideCharacter(BaseSchema, ToSharedModel[ExtraCharacter]):
+    id: int
+    seq: int
+    name: str
+
+    def to_shared_model(self) -> ExtraCharacter:
+        name = Name(first_name=self.name)
+        return ExtraCharacter(
+            id=self.id,
+            name=name,
         )

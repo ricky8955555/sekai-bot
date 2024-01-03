@@ -5,13 +5,14 @@ from aiohttp import ClientSession
 from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import CardInfo
-from sekai.core.models.chara import Character as SharedCharacter
+from sekai.core.models.chara import Character, CharacterInfo, CharacterType, ExtraCharacter
+from sekai.core.models.chara import GameCharacter as SharedGameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
 from ._models import BaseResponse, T_Model
 from ._models.card import Card
-from ._models.chara import Character
+from ._models.chara import GameCharacter, OutsideCharacter
 from ._models.music import Music, MusicDifficulty, MusicVocal
 
 DEFAULT_API = "https://api.pjsek.ai"
@@ -65,18 +66,48 @@ class PjsekaiApi(MasterApi):
     def search_card_info_by_title(self, keywords: str) -> AsyncIterable[CardInfo]:
         raise NotImplementedError
 
-    async def iter_characters(
+    async def iter_game_characters(
         self, limit: int = 20, skip: int = 0
-    ) -> AsyncIterable[SharedCharacter]:
-        async for model in self._iter("/database/master/gameCharacters", Character, limit, skip):
+    ) -> AsyncIterable[SharedGameCharacter]:
+        async for model in self._iter(
+            "/database/master/gameCharacters", GameCharacter, limit, skip
+        ):
             yield model.to_shared_model()
 
-    async def get_character(self, id: int) -> SharedCharacter:
-        models = await self._get("/database/master/gameCharacters", Character, params={"id": id})
+    async def get_game_character(self, id: int) -> SharedGameCharacter:
+        models = await self._get(
+            "/database/master/gameCharacters", GameCharacter, params={"id": id}
+        )
         return models[0].to_shared_model()
 
-    def search_character_by_title(self, keywords: str) -> AsyncIterable[SharedCharacter]:
-        raise NotImplementedError
+    async def iter_extra_characters(
+        self, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[ExtraCharacter]:
+        async for model in self._iter(
+            "/database/master/outsideCharacters", OutsideCharacter, limit, skip
+        ):
+            yield model.to_shared_model()
+
+    async def get_extra_character(self, id: int) -> ExtraCharacter:
+        models = await self._get(
+            "/database/master/outsideCharacters", OutsideCharacter, params={"id": id}
+        )
+        return models[0].to_shared_model()
+
+    async def get_character_info(self, character: Character) -> CharacterInfo:
+        match character.type:
+            case CharacterType.GAME:
+                return await self.get_game_character(character.id)
+            case CharacterType.EXTRA:
+                return await self.get_extra_character(character.id)
+
+    async def iter_character_infos(
+        self, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[CharacterInfo]:
+        async for model in self.iter_game_characters(limit, skip):
+            yield model
+        async for model in self.iter_extra_characters(limit, skip):
+            yield model
 
     async def iter_music_infos(self, limit: int = 20, skip: int = 0) -> AsyncIterable[MusicInfo]:
         async for model in self._iter("/database/master/musics", Music, limit, skip):

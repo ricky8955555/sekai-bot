@@ -13,7 +13,9 @@ from .models import Account
 
 router = context.module_manager.create_router()
 
-accounts = MappingDataStorage[int, Account](
+accounts = MappingDataStorage(
+    int,
+    Account,
     environ.module_data_path / "account",
     context.storage_strategy,
 )
