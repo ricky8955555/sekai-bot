@@ -47,7 +47,7 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         ]
         all_charas = [await context.master_api.get_character_info(singer) for singer in all_singers]
         return [
-            [all_charas[all_singers.index(singer)].name.full_name for singer in version.singers]
+            [all_charas[all_singers.index(singer)].name for singer in version.singers]
             for version in versions
         ]
 
@@ -199,11 +199,11 @@ async def music_download(update: Message | CallbackQuery, event: MusicDownloadEv
                 music_asset = await context.assets.get_music_preview(version.asset_id)
                 offset = 0.0
         music = await context.master_api.get_music_info(version.music_id)
-        artists = "/".join(singer.name.full_name for singer in singers)
+        artists = "/".join(singer.name for singer in singers)
         cover = await context.assets.get_music_cover(music.asset_id)
         metadata = process.Metadata(music.title, music.composer, artists, cover)
         processed = await process.process_audio(music_asset, metadata, offset)
-        singers_str = ", ".join(singer.name.full_name for singer in singers)
+        singers_str = ", ".join(singer.name for singer in singers)
         participants = singers_str if singers_str else music.composer
         filename = f"{participants} - {music.title}{processed.extension}"
         music_file = BufferedInputFile(processed.data, filename)

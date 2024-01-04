@@ -49,7 +49,7 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
     charas = [await context.master_api.get_game_character(card.character) for card in cards]
     buttons = [
         InlineKeyboardButton(
-            text=chara.name.full_name,
+            text=chara.name,
             callback_data=CardEvent(
                 id=card.id,
             ).pack(),

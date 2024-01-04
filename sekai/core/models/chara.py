@@ -14,21 +14,9 @@ class CharacterType(IntEnum):
     EXTRA = auto()
 
 
-class Name(SharedModel):
-    first_name: str
-    last_name: str | None = None
-
-    @property
-    def full_name(self) -> str:
-        return f"{self.last_name or ''}{self.first_name}"
-
-    def __str__(self) -> str:
-        return self.full_name
-
-
 class CharacterInfo(SharedModel):
     id: int
-    name: Name
+    name: str
 
 
 class GameCharacter(CharacterInfo):

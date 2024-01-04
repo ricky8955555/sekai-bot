@@ -3,7 +3,7 @@ from pydantic import Field
 from sekai.core.models import ToSharedModel
 from sekai.core.models.chara import ExtraCharacter
 from sekai.core.models.chara import GameCharacter as SharedGameCharacter
-from sekai.core.models.chara import Gender, Name
+from sekai.core.models.chara import Gender
 
 from . import BaseSchema
 
@@ -27,10 +27,9 @@ class GameCharacter(BaseSchema, ToSharedModel[SharedGameCharacter]):
     support_unit_type: str
 
     def to_shared_model(self) -> SharedGameCharacter:
-        name = Name(first_name=self.given_name, last_name=self.first_name)
         return SharedGameCharacter(
             id=self.id,
-            name=name,
+            name=f"{self.first_name}{self.given_name}",
             gender=Gender[self.gender.upper()],
             height=self.height,
         )
@@ -42,8 +41,7 @@ class OutsideCharacter(BaseSchema, ToSharedModel[ExtraCharacter]):
     name: str
 
     def to_shared_model(self) -> ExtraCharacter:
-        name = Name(first_name=self.name)
         return ExtraCharacter(
             id=self.id,
-            name=name,
+            name=self.name,
         )
