@@ -34,7 +34,7 @@ class ModuleManager:
             if (item.is_file() or (item / "__init__.py").exists()) and not item.stem.startswith("_")
         ]
         modules_set = set(modules)
-        assert len(modules_set) == len(modules), "duplicated modules were detected."
+        assert len(modules_set) == len(modules), "duplicate modules were detected."
         return modules_set
 
     def import_modules(self, *modules: str) -> None:
