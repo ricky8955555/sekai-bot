@@ -139,7 +139,7 @@ async def card_id(update: Message | CallbackQuery, event: CardEvent):
 <u><b>{card.title}</b></u>
 
 ID: {card.id}
-GameCharacter: {character.name}
+Character: {character.name}
 Gender: {character.gender.name.capitalize()}
 Height: {character.height} cm
 Release Time: {card.released}
@@ -177,7 +177,7 @@ async def card_search(message: Message, command: CommandObject):
 <u><b>{card.title}</b></u>
 
 ID: {card.id}
-GameCharacter: {character.name}
+Character: {character.name}
             """.strip(),
             parse_mode=ParseMode.HTML,
             reply_markup=markup,
