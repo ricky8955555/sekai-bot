@@ -20,7 +20,7 @@ class Name(SharedModel):
 
     @property
     def full_name(self) -> str:
-        return f"{self.first_name}{self.last_name or ''}"
+        return f"{self.last_name or ''}{self.first_name}"
 
     def __str__(self) -> str:
         return self.full_name

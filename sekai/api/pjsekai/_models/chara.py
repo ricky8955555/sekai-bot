@@ -27,10 +27,7 @@ class GameCharacter(BaseSchema, ToSharedModel[SharedGameCharacter]):
     support_unit_type: str
 
     def to_shared_model(self) -> SharedGameCharacter:
-        if self.first_name:
-            name = Name(first_name=self.first_name, last_name=self.given_name)
-        else:
-            name = Name(first_name=self.given_name)
+        name = Name(first_name=self.given_name, last_name=self.first_name)
         return SharedGameCharacter(
             id=self.id,
             name=name,
