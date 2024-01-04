@@ -1,6 +1,7 @@
 from aiohttp import ClientSession
 from async_lru import alru_cache
 
+from sekai.api import UserApi
 from sekai.api.exc import ObjectNotFound
 from sekai.core.models.card import Deck
 from sekai.core.models.user import Achievement, UserInfo
@@ -12,7 +13,7 @@ DEFAULT_API = "https://api.unipjsk.com"
 CACHE_TTL = 180
 
 
-class UnipjskApi:
+class UnipjskApi(UserApi):
     _api: str
 
     def __init__(self, api: str | None = None) -> None:
