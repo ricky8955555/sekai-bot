@@ -29,6 +29,7 @@ dev = [
     "pyright>=1.1.339",
     "black>=23.11.0",
     "isort>=5.13.1",
+    "pylint>=3.0.3",
 ]
 
 [tool.pyright]
