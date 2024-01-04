@@ -10,7 +10,7 @@ from sekai.core.models.chara import GameCharacter as SharedGameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
-from ._models import BaseResponse, T_Model
+from ._models import BaseResponse, AnyModel
 from ._models.card import Card
 from ._models.chara import GameCharacter, OutsideCharacter
 from ._models.music import Music, MusicDifficulty, MusicVocal
@@ -29,12 +29,12 @@ class PjsekaiApi(MasterApi):
         return ClientSession(self._api)
 
     async def _iter(
-        self, path: str, type: type[T_Model], limit: int = 20, skip: int = 0
-    ) -> AsyncIterable[T_Model]:
+        self, path: str, type: type[AnyModel], limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[AnyModel]:
         while True:
             async with self.session as session:
                 async with session.get(path, params={"$limit": limit, "$skip": skip}) as response:
-                    resp_type = cast(BaseResponse[T_Model], BaseResponse.__class_getitem__(type))
+                    resp_type = cast(BaseResponse[AnyModel], BaseResponse.__class_getitem__(type))
                     json = await response.read()
                     data = resp_type.model_validate_json(json)
                     for model in data.data:
@@ -44,11 +44,11 @@ class PjsekaiApi(MasterApi):
             skip += limit
 
     async def _get(
-        self, path: str, type: type[T_Model], *args: Any, **kwargs: Any
-    ) -> list[T_Model]:
+        self, path: str, type: type[AnyModel], *args: Any, **kwargs: Any
+    ) -> list[AnyModel]:
         async with self.session as session:
             async with session.get(path, *args, **kwargs) as response:
-                resp_type = cast(BaseResponse[T_Model], BaseResponse.__class_getitem__(type))
+                resp_type = cast(BaseResponse[AnyModel], BaseResponse.__class_getitem__(type))
                 json = await response.read()
                 data = resp_type.model_validate_json(json)
                 if not data.data:

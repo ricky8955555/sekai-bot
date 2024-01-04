@@ -8,10 +8,10 @@ class SharedModel(BaseModel):
     pass
 
 
-T_Model = TypeVar("T_Model", bound=SharedModel)
+AnySharedModel = TypeVar("AnySharedModel", bound=SharedModel)
 
 
-class ToSharedModel(abc.ABC, Generic[T_Model]):
+class ToSharedModel(abc.ABC, Generic[AnySharedModel]):
     @abc.abstractmethod
-    def to_shared_model(self) -> T_Model:
+    def to_shared_model(self) -> AnySharedModel:
         ...

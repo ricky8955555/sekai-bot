@@ -7,18 +7,18 @@ from aiogram.types import Audio, Document, File, Message, PhotoSize, Video
 
 from sekai.bot.storage.mapping import MappingDataStorage, StorageStrategy
 
-_T_Key = TypeVar("_T_Key")
+_KT = TypeVar("_KT")
 
 FileObject = File | PhotoSize | Video | Audio | Document
 
 
-class TelegramFileStorage(Generic[_T_Key]):
+class TelegramFileStorage(Generic[_KT]):
     _bot: Bot
-    _files: MappingDataStorage[_T_Key, str]
+    _files: MappingDataStorage[_KT, str]
 
     def __init__(
         self,
-        key: type[_T_Key],
+        key: type[_KT],
         bot: Bot,
         mapping_path: Path,
         strategy: StorageStrategy | None = None,
@@ -42,22 +42,22 @@ class TelegramFileStorage(Generic[_T_Key]):
             or message.audio
         )
 
-    async def get(self, key: _T_Key) -> str | None:
+    async def get(self, key: _KT) -> str | None:
         file_id = await self._files.get(key)
         if not file_id or not await self._exists(file_id):
             return None
         return file_id
 
-    async def bind(self, key: _T_Key, file_id: str) -> None:
+    async def bind(self, key: _KT, file_id: str) -> None:
         await self._files.update(key, file_id)
 
-    async def update(self, key: _T_Key, obj: Message | FileObject) -> None:
+    async def update(self, key: _KT, obj: Message | FileObject) -> None:
         file = self._extract_file(obj) if isinstance(obj, Message) else obj
         assert file, "object has no file."
         await self._files.update(key, file.file_id)
 
     async def update_all(
-        self, keys: Sequence[_T_Key], objs: Sequence[Message | FileObject]
+        self, keys: Sequence[_KT], objs: Sequence[Message | FileObject]
     ) -> None:
         assert len(keys) == len(objs), "counts of 'keys' and 'messages' are not matched."
         file_objs = [self._extract_file(obj) if isinstance(obj, Message) else obj for obj in objs]

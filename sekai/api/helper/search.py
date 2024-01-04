@@ -2,11 +2,11 @@ from enum import IntEnum, auto
 from typing import AsyncIterable, Callable, TypeVar
 
 from sekai.api import MasterApi
-from sekai.core.models import T_Model
+from sekai.core.models import AnySharedModel
 from sekai.core.models.card import CardInfo
 from sekai.core.models.music import MusicInfo
 
-_T_MasterApi = TypeVar("_T_MasterApi", bound=MasterApi)
+_T = TypeVar("_T", bound=MasterApi)
 
 
 class MatchMethod(IntEnum):
@@ -18,7 +18,7 @@ class MatchMethod(IntEnum):
 DEFAULT_METHOD = MatchMethod.FULL_MATCH
 
 
-def make_master_api_search_helper(base: type[_T_MasterApi]):
+def make_master_api_search_helper(base: type[_T]):
     class MasterApiSearchHelper(base):
         @staticmethod
         def match(keywords: str, data: list[str], method: MatchMethod) -> bool:
@@ -34,11 +34,11 @@ def make_master_api_search_helper(base: type[_T_MasterApi]):
 
         @staticmethod
         async def _search(
-            iterator: AsyncIterable[T_Model],
+            iterator: AsyncIterable[AnySharedModel],
             keywords: str,
-            data: Callable[[T_Model], list[str]],
+            data: Callable[[AnySharedModel], list[str]],
             method: MatchMethod,
-        ) -> AsyncIterable[T_Model]:
+        ) -> AsyncIterable[AnySharedModel]:
             async for model in iterator:
                 if MasterApiSearchHelper.match(keywords, data(model), method):
                     yield model

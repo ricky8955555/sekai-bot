@@ -15,16 +15,16 @@ class Event(abc.ABC, CallbackData, prefix=""):
         ...
 
 
-_T_Event = TypeVar("_T_Event", bound=Event)
+_T = TypeVar("_T", bound=Event)
 
 
-class EventCommand(Command, Generic[_T_Event]):
-    event: type[_T_Event]
+class EventCommand(Command, Generic[_T]):
+    event: type[_T]
 
     def __init__(
         self,
         *values: CommandPatternType,  # type: ignore
-        event: type[_T_Event],
+        event: type[_T],
         **kwargs: Any,
     ) -> None:
         self.event = event
@@ -42,10 +42,10 @@ class EventCommand(Command, Generic[_T_Event]):
         return result
 
 
-class EventCallbackQuery(CallbackQueryFilter, Generic[_T_Event]):
-    event: type[_T_Event]
+class EventCallbackQuery(CallbackQueryFilter, Generic[_T]):
+    event: type[_T]
 
-    def __init__(self, event: type[_T_Event]) -> None:
+    def __init__(self, event: type[_T]) -> None:
         self.event = event
         super().__init__(callback_data=event)
 

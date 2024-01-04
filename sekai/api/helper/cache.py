@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
-from sekai.core.models import SharedModel, T_Model
+from sekai.core.models import SharedModel, AnySharedModel
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import (
     Character,
@@ -23,8 +23,8 @@ from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
 
-class Cache(BaseModel, Generic[T_Model]):
-    data: list[T_Model]
+class Cache(BaseModel, Generic[AnySharedModel]):
+    data: list[AnySharedModel]
     last: datetime
 
 
@@ -50,10 +50,10 @@ class CachingMasterApi(MasterApi):
         self._cache = {}
         self._locks = {}
 
-    def _expired(self, cache: Cache[T_Model]) -> bool:
+    def _expired(self, cache: Cache[AnySharedModel]) -> bool:
         return (datetime.now() - cache.last) > self.strategy.expiry
 
-    async def _get_cache(self, type: type[T_Model]) -> Cache[T_Model] | None:
+    async def _get_cache(self, type: type[AnySharedModel]) -> Cache[AnySharedModel] | None:
         if (cached := self._cache.get(type)) is not None:
             return cached
         path = (self.path / type.__name__).with_suffix(".json")
@@ -62,12 +62,12 @@ class CachingMasterApi(MasterApi):
         assert path.is_file(), f"{path} is not a file."
         async with async_open(path, "r") as afp:
             data = await afp.read()
-        wrapped_type = cast(Cache[T_Model], Cache.__class_getitem__(type))
+        wrapped_type = cast(Cache[AnySharedModel], Cache.__class_getitem__(type))
         cache = wrapped_type.model_validate_json(data)
         self._cache[type] = cache
         return cache
 
-    async def _set_cache(self, models: list[T_Model]) -> Cache[T_Model]:
+    async def _set_cache(self, models: list[AnySharedModel]) -> Cache[AnySharedModel]:
         async def write():
             data = cache.model_dump_json()
             async with async_open(path, "w") as afp:
@@ -85,8 +85,8 @@ class CachingMasterApi(MasterApi):
         return cache
 
     async def _get_or_fetch_models(
-        self, type: type[T_Model], upstream: AsyncIterable[T_Model]
-    ) -> AsyncIterable[T_Model]:
+        self, type: type[AnySharedModel], upstream: AsyncIterable[AnySharedModel]
+    ) -> AsyncIterable[AnySharedModel]:
         lock = self._locks.setdefault(type, Lock())
         try:
             await lock.acquire()
@@ -99,16 +99,16 @@ class CachingMasterApi(MasterApi):
             yield model
 
     async def _get_model(
-        self, iterator: AsyncIterable[T_Model], condition: Callable[[T_Model], bool]
-    ) -> T_Model:
+        self, iterator: AsyncIterable[AnySharedModel], condition: Callable[[AnySharedModel], bool]
+    ) -> AnySharedModel:
         async for model in iterator:
             if condition(model):
                 return model
         raise ObjectNotFound
 
     async def _get_models(
-        self, iterator: AsyncIterable[T_Model], condition: Callable[[T_Model], bool]
-    ) -> list[T_Model]:
+        self, iterator: AsyncIterable[AnySharedModel], condition: Callable[[AnySharedModel], bool]
+    ) -> list[AnySharedModel]:
         models = [model async for model in iterator if condition(model)]
         if not models:
             raise ObjectNotFound

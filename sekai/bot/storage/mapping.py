@@ -7,31 +7,31 @@ from pydantic import BaseModel, RootModel
 
 from sekai.bot.storage import StorageStrategy
 
-_T_Key = TypeVar("_T_Key")
-_T_Value = TypeVar("_T_Value")
-_T_Default = TypeVar("_T_Default")
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
+_DT = TypeVar("_DT")
 
 
-class _PairModel(BaseModel, Generic[_T_Key, _T_Value]):
-    k: _T_Key
-    v: _T_Value
+class _PairModel(BaseModel, Generic[_KT, _VT]):
+    k: _KT
+    v: _VT
 
 
-class _MappingData(RootModel[list[_PairModel[_T_Key, _T_Value]]], Generic[_T_Key, _T_Value]):
+class _MappingData(RootModel[list[_PairModel[_KT, _VT]]], Generic[_KT, _VT]):
     pass
 
 
-class MappingDataStorage(Generic[_T_Key, _T_Value]):
+class MappingDataStorage(Generic[_KT, _VT]):
     path: Path
     strategy: StorageStrategy
-    _mapping: dict[_T_Key, _T_Value] | None
-    _model: type[_T_Value]
-    _mapping_data_type: type[_MappingData[_T_Key, _T_Value]]
+    _mapping: dict[_KT, _VT] | None
+    _model: type[_VT]
+    _mapping_data_type: type[_MappingData[_KT, _VT]]
 
     def __init__(
         self,
-        key: type[_T_Key],
-        value: type[_T_Value],
+        key: type[_KT],
+        value: type[_VT],
         path: Path,
         strategy: StorageStrategy | None = None,
     ) -> None:
@@ -39,10 +39,10 @@ class MappingDataStorage(Generic[_T_Key, _T_Value]):
         self.strategy = strategy or StorageStrategy()
         self._mapping = None
         self._mapping_data_type = cast(
-            type[_MappingData[_T_Key, _T_Value]], _MappingData.__class_getitem__((key, value))
+            type[_MappingData[_KT, _VT]], _MappingData.__class_getitem__((key, value))
         )
 
-    async def _load_file(self) -> dict[_T_Key, _T_Value]:
+    async def _load_file(self) -> dict[_KT, _VT]:
         if not self.path.exists():
             self._mapping = {}
             return self._mapping
@@ -66,25 +66,25 @@ class MappingDataStorage(Generic[_T_Key, _T_Value]):
         if not self.strategy.write_in_background:
             await task
 
-    async def _load_ref(self) -> dict[_T_Key, _T_Value]:
+    async def _load_ref(self) -> dict[_KT, _VT]:
         if self._mapping is not None:
             return self._mapping
         mapping = await self._load_file()
         return mapping
 
-    async def load(self) -> dict[_T_Key, _T_Value]:
+    async def load(self) -> dict[_KT, _VT]:
         mapping = await self._load_ref()
         return dict(mapping)
 
-    async def write(self, mapping: Mapping[_T_Key, _T_Value]) -> None:
+    async def write(self, mapping: Mapping[_KT, _VT]) -> None:
         self._mapping = dict(mapping)
         await self._write_file()
 
-    async def get(self, key: _T_Key, default: _T_Default = None) -> _T_Value | _T_Default:
+    async def get(self, key: _KT, default: _DT = None) -> _VT | _DT:
         mapping = await self._load_ref()
         return mapping.get(key, default)
 
-    async def update(self, key: _T_Key, value: _T_Value) -> None:
+    async def update(self, key: _KT, value: _VT) -> None:
         mapping = await self._load_ref()
         mapping[key] = value
         await self._write_file()

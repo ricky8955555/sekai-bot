@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 import pydantic.alias_generators
 from pydantic import BaseModel, ConfigDict
 
-T_Model = TypeVar("T_Model")
+AnyModel = TypeVar("AnyModel")
 
 
 class BaseSchema(BaseModel):
@@ -14,8 +14,8 @@ class BaseSchema(BaseModel):
     )
 
 
-class BaseResponse(BaseSchema, Generic[T_Model]):
+class BaseResponse(BaseSchema, Generic[AnyModel]):
     total: int
     limit: int
     skip: int
-    data: list[T_Model]
+    data: list[AnyModel]
