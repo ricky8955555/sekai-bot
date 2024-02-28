@@ -22,12 +22,12 @@ async def resize_cover(cover: Asset) -> Asset:
         dir = Path(dir)
         input_file = (dir / "audio").with_suffix(cover.extension)
         output_file = dir / "output.jpg"
-        async with async_open(input_file, "wb") as fp:
-            await fp.write(cover.data)
+        async with async_open(input_file, "wb") as afp:
+            await afp.write(cover.data)
         ffmpeg = FFmpeg().input(input_file).output(output_file)
         await ffmpeg.execute()
-        async with async_open(input_file, "rb") as fp:
-            data = await fp.read()
+        async with async_open(input_file, "rb") as afp:
+            data = await afp.read()
     return Asset(data, ".jpg")
 
 
@@ -38,8 +38,8 @@ async def process_audio(music: Asset, metadata: Metadata, offset: float = 0) -> 
         output_file = dir / "output.mp3"
         ffmpeg = FFmpeg().option("y")
         options: dict[str, Option | None] = {}
-        async with async_open(input_file, "wb") as fp:
-            await fp.write(music.data)
+        async with async_open(input_file, "wb") as afp:
+            await afp.write(music.data)
         ffmpeg.input(input_file, ss=offset)
         if music.extension == ".mp3":
             options["c:a"] = "copy"
@@ -48,8 +48,8 @@ async def process_audio(music: Asset, metadata: Metadata, offset: float = 0) -> 
             options["V"] = 0
         if metadata.cover:
             cover_file = (dir / "cover").with_suffix(metadata.cover.extension)
-            async with async_open(cover_file, "wb") as fp:
-                await fp.write(metadata.cover.data)
+            async with async_open(cover_file, "wb") as afp:
+                await afp.write(metadata.cover.data)
             ffmpeg.input(cover_file)
             options["map"] = [0, 1]
             options["c:v"] = "copy"
@@ -60,6 +60,6 @@ async def process_audio(music: Asset, metadata: Metadata, offset: float = 0) -> 
         ]
         ffmpeg.output(output_file, options)
         await ffmpeg.execute()
-        async with async_open(output_file, "rb") as fp:
-            data = await fp.read()
+        async with async_open(output_file, "rb") as afp:
+            data = await afp.read()
     return Asset(data, ".mp3")
