@@ -10,7 +10,7 @@ from sekai.core.models.chara import GameCharacter as SharedGameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 
-from ._models import BaseResponse, AnyModel
+from ._models import AnyModel, BaseResponse
 from ._models.card import Card
 from ._models.chara import GameCharacter, OutsideCharacter
 from ._models.music import Music, MusicDifficulty, MusicVocal

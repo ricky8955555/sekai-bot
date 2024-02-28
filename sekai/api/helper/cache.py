@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
-from sekai.core.models import SharedModel, AnySharedModel
+from sekai.core.models import AnySharedModel, SharedModel
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import (
     Character,
