@@ -56,9 +56,7 @@ class TelegramFileStorage(Generic[_KT]):
         assert file, "object has no file."
         await self._files.update(key, file.file_id)
 
-    async def update_all(
-        self, keys: Sequence[_KT], objs: Sequence[Message | FileObject]
-    ) -> None:
+    async def update_all(self, keys: Sequence[_KT], objs: Sequence[Message | FileObject]) -> None:
         assert len(keys) == len(objs), "counts of 'keys' and 'messages' are not matched."
         file_objs = [self._extract_file(obj) if isinstance(obj, Message) else obj for obj in objs]
         assert all(file_objs), "not all objects have file."

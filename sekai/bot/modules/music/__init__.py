@@ -54,13 +54,13 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
     assert (message := update if isinstance(update, Message) else update.message)
     hint_message = await message.reply("waiting for handling...")
     music = await context.master_api.get_music_info(event.id)
-    versions = await context.master_api.get_versions_of_music(event.id)
+    versions = [version async for version in context.master_api.iter_versions_of_music(event.id)]
     ver_singers = await version_singers(versions)
     versions_str = "\n".join(
         f"・<b>{humanize_enum(version.vocal_type)} ver.</b> " f"({', '.join(singers)})"
         for version, singers in zip(versions, ver_singers)
     )
-    lives = await context.master_api.get_live_infos_of_music(event.id)
+    lives = [live async for live in context.master_api.iter_live_infos_of_music(event.id)]
     diffculties = "\n".join(
         f"・<b>{humanize_enum(live.difficulty)}:</b> Lv.{live.level}" for live in lives
     )

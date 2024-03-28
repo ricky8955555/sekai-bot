@@ -80,7 +80,7 @@ class MasterApi(abc.ABC):
         ...
 
     @abc.abstractmethod
-    async def get_versions_of_music(self, id: int) -> list[MusicVersion]:
+    def iter_versions_of_music(self, id: int) -> AsyncIterable[MusicVersion]:
         ...
 
     @abc.abstractmethod
@@ -92,5 +92,5 @@ class MasterApi(abc.ABC):
         ...
 
     @abc.abstractmethod
-    async def get_live_infos_of_music(self, id: int) -> list[LiveInfo]:
+    def iter_live_infos_of_music(self, id: int) -> AsyncIterable[LiveInfo]:
         ...

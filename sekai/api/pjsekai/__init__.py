@@ -29,11 +29,22 @@ class PjsekaiApi(MasterApi):
         return ClientSession(self._api)
 
     async def _iter(
-        self, path: str, type: type[AnyModel], limit: int = 20, skip: int = 0
+        self,
+        path: str,
+        type: type[AnyModel],
+        limit: int = 20,
+        skip: int = 0,
+        params: dict[str, Any] | None = None,
     ) -> AsyncIterable[AnyModel]:
+        params = params or {}
+        assert (
+            "$limit" not in params and "$skip" not in params
+        ), "'$limit' and '$skip' should not be in the params."
         while True:
             async with self.session as session:
-                async with session.get(path, params={"$limit": limit, "$skip": skip}) as response:
+                async with session.get(
+                    path, params=({"$limit": limit, "$skip": skip} | params)
+                ) as response:
                     resp_type = cast(BaseResponse[AnyModel], BaseResponse.__class_getitem__(type))
                     json = await response.read()
                     data = resp_type.model_validate_json(json)
@@ -130,9 +141,17 @@ class PjsekaiApi(MasterApi):
         models = await self._get("/database/master/musicVocals", MusicVocal, params={"id": id})
         return models[0].to_shared_model()
 
-    async def get_versions_of_music(self, id: int) -> list[MusicVersion]:
-        models = await self._get("/database/master/musicVocals", MusicVocal, params={"musicId": id})
-        return [vocal.to_shared_model() for vocal in models]
+    async def iter_versions_of_music(
+        self, id: int, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[MusicVersion]:
+        async for vocal in self._iter(
+            "/database/master/musicVocals",
+            MusicVocal,
+            limit,
+            skip,
+            params={"musicId": id},
+        ):
+            yield vocal.to_shared_model()
 
     async def iter_live_infos(self, limit: int = 20, skip: int = 0) -> AsyncIterable[LiveInfo]:
         async for model in self._iter(
@@ -146,8 +165,14 @@ class PjsekaiApi(MasterApi):
         )
         return models[0].to_shared_model()
 
-    async def get_live_infos_of_music(self, id: int) -> list[LiveInfo]:
-        models = await self._get(
-            "/database/master/musicDifficulties", MusicDifficulty, params={"musicId": id}
-        )
-        return [vocal.to_shared_model() for vocal in models]
+    async def iter_live_infos_of_music(
+        self, id: int, limit: int = 20, skip: int = 0
+    ) -> AsyncIterable[LiveInfo]:
+        async for vocal in self._iter(
+            "/database/master/musicDifficulties",
+            MusicDifficulty,
+            limit,
+            skip,
+            params={"musicId": id},
+        ):
+            yield vocal.to_shared_model()

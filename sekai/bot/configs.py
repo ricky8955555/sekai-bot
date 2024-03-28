@@ -14,7 +14,6 @@ class ServerConfig(Config):
     pjsekai_assets: str | None = None
     sekaiworld_assets: str | None = None
     cache_expiry: timedelta = timedelta(days=1)
-    write_cache_in_background: bool = True
 
 
 class SearchConfig(Config):
