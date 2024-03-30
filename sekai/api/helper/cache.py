@@ -103,14 +103,12 @@ class CachingMasterApi(MasterApi):
 
     async def _check_and_update_cache(self) -> None:
         if not self._updating.is_set():
-            return
-        upstream = await self._upstream_system_info()
-        try:
+            return 
+        if self._cached_system_info_path.exists():
+            upstream = await self._upstream_system_info()
             cached = await self.get_current_system_info()
             if cached.published >= upstream.published:
                 return
-        except ObjectNotFound:
-            pass
         await self._retriable_update_cache()
 
     @retry(wait=wait_fixed(3))
