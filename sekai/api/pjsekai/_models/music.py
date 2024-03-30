@@ -83,8 +83,8 @@ class Music(BaseSchema, ToSharedModel[MusicInfo]):
             lyricist=self.lyricist,
             composer=self.composer,
             arranger=self.arranger,
-            released=datetime.utcfromtimestamp(self.released_at / 1000),
-            published=datetime.utcfromtimestamp(self.published_at / 1000),
+            released=datetime.utcfromtimestamp(self.released_at / 1000),  # type: ignore
+            published=datetime.utcfromtimestamp(self.published_at / 1000),  # type: ignore
             asset_id=self.assetbundle_name,
         )
 

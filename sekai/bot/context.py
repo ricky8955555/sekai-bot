@@ -21,10 +21,10 @@ bot: Bot
 
 module_manager: ModuleManager
 
-master_api = make_master_api_search_helper(CachingMasterApi)(
+master_api: CachingMasterApi = make_master_api_search_helper(CachingMasterApi)(
     PjsekaiApi(server_config.pjsekai_api),
     cache_path,
-    CachingStrategy(server_config.cache_expiry),
+    CachingStrategy(server_config.check_cycle),
 )  # type: ignore
 user_api = UnipjskApi(server_config.uniprsk_api)
 

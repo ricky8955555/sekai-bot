@@ -13,6 +13,8 @@ async def main():
     context.module_manager = module_manager = ModuleManager(dispatcher)
     module_manager.import_modules_from(environ.module_path)
 
+    context.master_api.run_cache_task()
+
     await dispatcher.start_polling(bot)
 
 

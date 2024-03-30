@@ -5,6 +5,7 @@ from sekai.core.models.card import CardInfo, Deck
 from sekai.core.models.chara import Character, CharacterInfo, ExtraCharacter, GameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
+from sekai.core.models.system import SystemInfo
 from sekai.core.models.user import Achievement, UserInfo
 
 
@@ -93,4 +94,8 @@ class MasterApi(abc.ABC):
 
     @abc.abstractmethod
     def iter_live_infos_of_music(self, id: int) -> AsyncIterable[LiveInfo]:
+        ...
+
+    @abc.abstractmethod
+    async def get_current_system_info(self) -> SystemInfo:
         ...

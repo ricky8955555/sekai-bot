@@ -9,11 +9,13 @@ from sekai.core.models.chara import Character, CharacterInfo, CharacterType, Ext
 from sekai.core.models.chara import GameCharacter as SharedGameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
+from sekai.core.models.system import SystemInfo as SharedSystemInfo
 
 from ._models import AnyModel, BaseResponse
 from ._models.card import Card
 from ._models.chara import GameCharacter, OutsideCharacter
 from ._models.music import Music, MusicDifficulty, MusicVocal
+from ._models.system import SystemInfo
 
 DEFAULT_API = "https://api.pjsek.ai"
 
@@ -176,3 +178,7 @@ class PjsekaiApi(MasterApi):
             params={"musicId": id},
         ):
             yield vocal.to_shared_model()
+
+    async def get_current_system_info(self) -> SharedSystemInfo:
+        models = await self._get("/system-info", SystemInfo)
+        return models[0].to_shared_model()

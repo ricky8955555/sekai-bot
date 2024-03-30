@@ -1,13 +1,15 @@
 import asyncio
 import shutil
-from asyncio import Lock, Queue
+import traceback
+from asyncio import Event
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
-from typing import AsyncIterable, Protocol, TypeVar
+from typing import AsyncIterable, Awaitable, Callable, Protocol, TypeVar
 
 from aiofile import async_open
 from pydantic import RootModel
+from tenacity import retry, wait_fixed
 
 from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
@@ -21,6 +23,7 @@ from sekai.core.models.chara import (
 )
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
+from sekai.core.models.system import SystemInfo
 
 
 class IdModel(Protocol):
@@ -32,14 +35,16 @@ AnyIdModel = TypeVar("AnyIdModel", bound=IdModel)
 
 @dataclass(frozen=True)
 class CachingStrategy:
-    expiry: timedelta = timedelta(days=1)
+    check_cycle: timedelta = timedelta(hours=1)
 
 
 class CachingMasterApi(MasterApi):
     path: Path
-    upstream: MasterApi
     strategy: CachingStrategy
-    _locks: dict[type[IdModel], Lock]
+    _updating: Event
+    _upstreams: dict[type[IdModel], Callable[[], AsyncIterable[IdModel]]]
+    _upstream_system_info: Callable[[], Awaitable[SystemInfo]]
+    _cache_task: asyncio.Task[None] | None
 
     def __init__(
         self, upstream: MasterApi, cache_path: Path, strategy: CachingStrategy | None = None
@@ -47,33 +52,108 @@ class CachingMasterApi(MasterApi):
         self.upstream = upstream
         self.path = cache_path
         self.strategy = strategy or CachingStrategy()
-        self._locks = dict()
+        self._updating = Event()
+        self._upstreams = {
+            CardInfo: upstream.iter_card_infos,
+            GameCharacter: upstream.iter_game_characters,
+            ExtraCharacter: upstream.iter_extra_characters,
+            CharacterInfo: upstream.iter_character_infos,
+            LiveInfo: upstream.iter_live_infos,
+            MusicInfo: upstream.iter_music_infos,
+        }
+        self._upstream_system_info = upstream.get_current_system_info
+        self._updating.set()
+        self._cache_task = None
+
+    @property
+    def _cached_system_info_path(self) -> Path:
+        return self.path / ".cache"
 
     def _models_path(self, typ: type[AnyIdModel]) -> Path:
         return self.path / typ.__name__
-    
+
     def _cache_path(self, typ: type[AnyIdModel], id: int) -> Path:
         return (self._models_path(typ) / str(id)).with_suffix(".json")
 
-    def _updated_mark_path(self, typ: type[AnyIdModel]) -> Path:
-        return self._models_path(typ) / ".last"
+    def run_cache_task(self) -> None:
+        assert self._cache_task is None, "another cache task is running."
+        self._cache_task = asyncio.create_task(self._cache_worker())
 
-    def _expired(self, typ: type[AnyIdModel]) -> bool:
-        path = self._updated_mark_path(typ)
-        if not path.exists():
-            return True
-        return (
-            datetime.now() - datetime.fromtimestamp(path.stat().st_atime)
-        ) > self.strategy.expiry
+    def cancel_cache_task(self) -> None:
+        assert self._cache_task is not None, "no cache task is running."
+        self._cache_task.cancel()
+        self._cache_task = None
 
-    def _mark_updated(self, typ: type[AnyIdModel]) -> None:
-        path = self._updated_mark_path(typ)
-        path.touch()
+    async def get_current_system_info(self) -> SystemInfo:
+        if not self._cached_system_info_path.exists():
+            raise ObjectNotFound
+        async with async_open(self._cached_system_info_path, "r") as afp:
+            data = await afp.read()
+        return SystemInfo.model_validate_json(data)
 
-    async def _get_cache(self, typ: type[AnyIdModel], id: int) -> AnyIdModel | None:
+    async def _update_system_info(self, info: SystemInfo) -> None:
+        data = info.model_dump_json()
+        async with async_open(self._cached_system_info_path, "w") as afp:
+            await afp.write(data)
+
+    async def _cache_worker(self) -> None:
+        while True:
+            await self._check_and_update_cache()
+            await asyncio.sleep(self.strategy.check_cycle.total_seconds())
+
+    async def _check_and_update_cache(self) -> None:
+        if not self._updating.is_set():
+            return
+        upstream = await self._upstream_system_info()
+        try:
+            cached = await self.get_current_system_info()
+            if cached.published >= upstream.published:
+                return
+        except ObjectNotFound:
+            pass
+        await self._retriable_update_cache()
+
+    @retry(wait=wait_fixed(3))
+    async def _retriable_update_cache(self) -> None:
+        try:
+            await self.update_cache()
+        except Exception:
+            traceback.print_exc()
+            raise
+
+    async def update_cache(self) -> None:
+        async def updater(
+            typ: type[IdModel], provider: Callable[[], AsyncIterable[IdModel]]
+        ) -> None:
+            async for model in provider():
+                path = self._cache_path(typ, model.id)
+                wrapped = RootModel(root=model)
+                data = wrapped.model_dump_json()
+                async with async_open(path, "w") as afp:
+                    await afp.write(data)
+
+        assert self._updating.is_set(), "cache is updating."
+        self._updating.clear()
+        try:
+            upstream = await self._upstream_system_info()
+            self._rebuild_cache_tree()
+            updaters = [updater(typ, provider) for (typ, provider) in self._upstreams.items()]
+            await asyncio.gather(*updaters)
+            await self._update_system_info(upstream)
+        finally:
+            self._updating.set()
+
+    def _rebuild_cache_tree(self) -> None:
+        shutil.rmtree(self.path)
+        self.path.mkdir()
+        for typ in self._upstreams.keys():
+            self._models_path(typ).mkdir()
+
+    async def _get_cache(self, typ: type[AnyIdModel], id: int) -> AnyIdModel:
+        await self._updating.wait()
         path = self._cache_path(typ, id)
         if not path.exists():
-            return None
+            raise ObjectNotFound
         assert path.is_file(), f"{path} is not a file."
         async with async_open(path, "r") as afp:
             data = await afp.read()
@@ -82,6 +162,7 @@ class CachingMasterApi(MasterApi):
         return cache.root  # type: ignore
 
     async def _iter_caches(self, typ: type[AnyIdModel]) -> AsyncIterable[AnyIdModel]:
+        await self._updating.wait()
         path = self._models_path(typ)
         if not path.exists():
             return
@@ -94,87 +175,26 @@ class CachingMasterApi(MasterApi):
             cache = wrapped_type.model_validate_json(data)  # type: ignore
             yield cache.root  # type: ignore
 
-    async def _sync_models(
-        self, typ: type[AnyIdModel], models: AsyncIterable[AnyIdModel]
-    ) -> AsyncIterable[AnyIdModel]:
-        async def worker() -> None:
-            await lock.acquire()
-            try:
-                parent = self._models_path(typ)
-                shutil.rmtree(parent, ignore_errors=True)
-                parent.mkdir(parents=True)
-                async for model in models:
-                    queue.put_nowait(model)
-                    path = self._cache_path(typ, model.id).with_suffix(".json")
-                    wrapped = RootModel(root=model)
-                    data = wrapped.model_dump_json()
-                    async with async_open(path, "w") as afp:
-                        await afp.write(data)
-                self._mark_updated(typ)
-            finally:
-                lock.release()
-                queue.put_nowait(None)
-
-        lock = self._locks.setdefault(typ, Lock())
-
-        if lock.locked():
-            await lock.acquire()
-            lock.release()
-            async for model in self._get_or_fetch_models(typ, models):
-                yield model
-            return
-
-        queue = Queue[AnyIdModel | None]()
-        asyncio.create_task(worker())
-        while True:
-            model = await queue.get()
-            if not model:
-                return
-            yield model
-
-    async def _get_or_fetch_model(
-        self, typ: type[AnyIdModel], id: int, upstream: AsyncIterable[AnyIdModel]
-    ) -> AnyIdModel:
-        model = await self._get_cache(typ, id)
-        if self._expired(typ):
-            async for model in self._sync_models(typ, upstream):
-                if model.id == id:
-                    return model
-        if not model:
-            raise ObjectNotFound
-        return model
-
-    def _get_or_fetch_models(
-        self, typ: type[AnyIdModel], upstream: AsyncIterable[AnyIdModel]
-    ) -> AsyncIterable[AnyIdModel]:
-        if self._expired(typ):
-            return self._sync_models(typ, upstream)
-        return self._iter_caches(typ)
-
     def iter_card_infos(self) -> AsyncIterable[CardInfo]:
-        return self._get_or_fetch_models(CardInfo, self.upstream.iter_card_infos())
+        return self._iter_caches(CardInfo)
 
     async def get_card_info(self, id: int) -> CardInfo:
-        return await self._get_or_fetch_model(CardInfo, id, self.upstream.iter_card_infos())
+        return await self._get_cache(CardInfo, id)
 
     def search_card_info_by_title(self, keywords: str) -> AsyncIterable[CardInfo]:
         raise NotImplementedError
 
     def iter_game_characters(self) -> AsyncIterable[GameCharacter]:
-        return self._get_or_fetch_models(GameCharacter, self.upstream.iter_game_characters())
+        return self._iter_caches(GameCharacter)
 
     async def get_game_character(self, id: int) -> GameCharacter:
-        return await self._get_or_fetch_model(
-            GameCharacter, id, self.upstream.iter_game_characters()
-        )
+        return await self._get_cache(GameCharacter, id)
 
     def iter_extra_characters(self) -> AsyncIterable[ExtraCharacter]:
-        return self._get_or_fetch_models(ExtraCharacter, self.upstream.iter_extra_characters())
+        return self._iter_caches(ExtraCharacter)
 
     async def get_extra_character(self, id: int) -> ExtraCharacter:
-        return await self._get_or_fetch_model(
-            ExtraCharacter, id, self.upstream.iter_extra_characters()
-        )
+        return await self._get_cache(ExtraCharacter, id)
 
     async def iter_character_infos(self) -> AsyncIterable[CharacterInfo]:
         async for model in self.iter_game_characters():
@@ -190,19 +210,19 @@ class CachingMasterApi(MasterApi):
                 return await self.get_extra_character(character.id)
 
     def iter_music_infos(self) -> AsyncIterable[MusicInfo]:
-        return self._get_or_fetch_models(MusicInfo, self.upstream.iter_music_infos())
+        return self._iter_caches(MusicInfo)
 
     async def get_music_info(self, id: int) -> MusicInfo:
-        return await self._get_or_fetch_model(MusicInfo, id, self.upstream.iter_music_infos())
+        return await self._get_cache(MusicInfo, id)
 
     def search_music_info_by_title(self, keywords: str) -> AsyncIterable[MusicInfo]:
         raise NotImplementedError
 
     def iter_music_versions(self) -> AsyncIterable[MusicVersion]:
-        return self._get_or_fetch_models(MusicVersion, self.upstream.iter_music_versions())
+        return self._iter_caches(MusicVersion)
 
     async def get_music_version(self, id: int) -> MusicVersion:
-        return await self._get_or_fetch_model(MusicVersion, id, self.upstream.iter_music_versions())
+        return await self._get_cache(MusicVersion, id)
 
     async def iter_versions_of_music(self, id: int) -> AsyncIterable[MusicVersion]:
         async for version in self.iter_music_versions():
@@ -210,10 +230,10 @@ class CachingMasterApi(MasterApi):
                 yield version
 
     def iter_live_infos(self) -> AsyncIterable[LiveInfo]:
-        return self._get_or_fetch_models(LiveInfo, self.upstream.iter_live_infos())
+        return self._iter_caches(LiveInfo)
 
     async def get_live_info(self, id: int) -> LiveInfo:
-        return await self._get_or_fetch_model(LiveInfo, id, self.upstream.iter_live_infos())
+        return await self._get_cache(LiveInfo, id)
 
     async def iter_live_infos_of_music(self, id: int) -> AsyncIterable[LiveInfo]:
         async for info in self.iter_live_infos():

@@ -13,7 +13,7 @@ class ServerConfig(Config):
     uniprsk_api: str | None = None
     pjsekai_assets: str | None = None
     sekaiworld_assets: str | None = None
-    cache_expiry: timedelta = timedelta(days=1)
+    check_cycle: timedelta = timedelta(hours=1)
 
 
 class SearchConfig(Config):
