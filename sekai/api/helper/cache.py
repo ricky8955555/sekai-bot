@@ -57,7 +57,6 @@ class CachingMasterApi(MasterApi):
             CardInfo: upstream.iter_card_infos,
             GameCharacter: upstream.iter_game_characters,
             ExtraCharacter: upstream.iter_extra_characters,
-            CharacterInfo: upstream.iter_character_infos,
             LiveInfo: upstream.iter_live_infos,
             MusicInfo: upstream.iter_music_infos,
         }
