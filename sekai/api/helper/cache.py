@@ -59,6 +59,7 @@ class CachingMasterApi(MasterApi):
             ExtraCharacter: upstream.iter_extra_characters,
             LiveInfo: upstream.iter_live_infos,
             MusicInfo: upstream.iter_music_infos,
+            MusicVersion: upstream.iter_music_versions,
         }
         self._upstream_system_info = upstream.get_current_system_info
         self._updating.set()
