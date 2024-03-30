@@ -52,7 +52,7 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         ]
 
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("waiting for handling...")
+    hint_message = await message.reply("processing...")
     music = await context.master_api.get_music_info(event.id)
     versions = [version async for version in context.master_api.iter_versions_of_music(event.id)]
     ver_singers = await version_singers(versions)
@@ -138,7 +138,7 @@ async def iter_music(
             reply_markup=markup,
         )
 
-    message = await message.reply("waiting for handling...")
+    message = await message.reply("processing...")
     it = aiter(iterable)
     await next_music(message)
 
@@ -170,7 +170,7 @@ async def artist(message: Message, command: CommandObject):
 @router.message(EventCommand("musicdown", event=MusicDownloadEvent))
 async def music_download(update: Message | CallbackQuery, event: MusicDownloadEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("waiting for handling...")
+    hint_message = await message.reply("processing...")
     version = await context.master_api.get_music_version(event.id)
     query = AudioQuery(asset_id=version.asset_id, type=event.type)
     singers = [await context.master_api.get_character_info(singer) for singer in version.singers]

@@ -43,7 +43,7 @@ _RARITY = {
 @router.message(EventCommand("deck", event=DeckEvent))
 async def deck(update: Message | CallbackQuery, event: DeckEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("waiting for handling...")
+    hint_message = await message.reply("processing...")
     deck = await context.user_api.get_user_main_deck(event.id)
     cards = [await context.master_api.get_card_info(card.id) for card in deck.members]
     charas = [await context.master_api.get_game_character(card.character) for card in cards]
@@ -114,7 +114,7 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
 @router.callback_query(EventCallbackQuery(CardEvent))
 async def card_id(update: Message | CallbackQuery, event: CardEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("waiting for handling...")
+    hint_message = await message.reply("processing...")
     card = await context.master_api.get_card_info(event.id)
     character = await context.master_api.get_game_character(card.character)
     queries: list[CardPhotoQuery] = [
@@ -185,7 +185,7 @@ Character: {character.name}
 
     if not command.args:
         return
-    message = await message.reply("waiting for handling...")
+    message = await message.reply("processing...")
     it = aiter(
         context.master_api.search_card_info_by_title(command.args, context.search_config.card)
     )

@@ -17,7 +17,7 @@ router = context.module_manager.create_router()
 @router.message(EventCommand("profile", event=ProfileEvent))
 async def profile(update: Message | CallbackQuery, event: ProfileEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    message = await message.reply("waiting for handling...")
+    message = await message.reply("processing...")
     user = await context.user_api.get_user_info(event.id)
     buttons = [
         [
@@ -52,7 +52,7 @@ async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
         )
 
     assert (message := update if isinstance(update, Message) else update.message)
-    message = await message.reply("waiting for handling...")
+    message = await message.reply("processing...")
     user = await context.user_api.get_user_info(event.id)
     achieve = await context.user_api.get_user_achievement(event.id)
     buttons = [
