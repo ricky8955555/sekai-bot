@@ -29,7 +29,7 @@ class GameCharacter(BaseSchema, ToSharedModel[SharedGameCharacter]):
     def to_shared_model(self) -> SharedGameCharacter:
         return SharedGameCharacter(
             id=self.id,
-            name=f"{self.first_name}{self.given_name}",
+            name=f"{self.first_name or ''}{self.given_name}",
             gender=Gender[self.gender.upper()],
             height=self.height,
         )
