@@ -1,8 +1,8 @@
 from aiohttp import ClientSession
 from async_lru import alru_cache
 
-from sekai.api import UserApi
 from sekai.api.exc import ObjectNotFound
+from sekai.api.user import UserApi
 from sekai.core.models.card import Deck
 from sekai.core.models.user import Achievement, UserInfo
 

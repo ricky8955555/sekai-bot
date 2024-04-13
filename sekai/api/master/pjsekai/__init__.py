@@ -2,8 +2,8 @@ from typing import Any, AsyncIterable, cast
 
 from aiohttp import ClientSession
 
-from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
+from sekai.api.master import MasterApi
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character, CharacterInfo, CharacterType, ExtraCharacter
 from sekai.core.models.chara import GameCharacter as SharedGameCharacter
@@ -11,11 +11,12 @@ from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo as SharedSystemInfo
 
-from ._models import AnyModel, BaseResponse
-from ._models.card import Card
-from ._models.chara import GameCharacter, OutsideCharacter
-from ._models.music import Music, MusicDifficulty, MusicVocal
-from ._models.system import SystemInfo
+from .._models import AnyModel
+from .._models.card import Card
+from .._models.chara import GameCharacter, OutsideCharacter
+from .._models.music import Music, MusicDifficulty, MusicVocal
+from .._models.system import SystemInfo
+from ._models import BaseResponse
 
 DEFAULT_API = "https://api.pjsek.ai"
 

@@ -1,7 +1,7 @@
 from enum import IntEnum, auto
 from typing import AsyncIterable, Callable, TypeVar
 
-from sekai.api import MasterApi
+from sekai.api.master import MasterApi
 from sekai.core.models import AnySharedModel
 from sekai.core.models.card import CardInfo
 from sekai.core.models.music import MusicInfo
@@ -47,16 +47,16 @@ def make_master_api_search_helper(base: type[_T]):
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[MusicInfo]:
             return self._search(
-                super().iter_music_infos(), keywords, lambda model: [model.title], method
+                super().iter_music_infos(),  # type: ignore
+                keywords, lambda model: [model.title], method,
             )
 
         def search_music_info_by_artist(
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[MusicInfo]:
             return self._search(
-                super().iter_music_infos(),
+                super().iter_music_infos(),  # type: ignore
                 keywords,
-                # priority: composer > lyricist > arranger
                 lambda model: [model.composer, model.lyricist, model.arranger],
                 method,
             )
@@ -65,7 +65,8 @@ def make_master_api_search_helper(base: type[_T]):
             self, keywords: str, method: MatchMethod = DEFAULT_METHOD
         ) -> AsyncIterable[CardInfo]:
             return self._search(
-                super().iter_card_infos(), keywords, lambda model: [model.title], method
+                super().iter_card_infos(),  # type: ignore
+                keywords, lambda model: [model.title], method,
             )
 
     return MasterApiSearchHelper

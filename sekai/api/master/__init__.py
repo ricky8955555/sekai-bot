@@ -1,26 +1,11 @@
 import abc
 from typing import AsyncIterable
 
-from sekai.core.models.card import CardInfo, Deck
+from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character, CharacterInfo, ExtraCharacter, GameCharacter
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo
-from sekai.core.models.user import Achievement, UserInfo
-
-
-class UserApi(abc.ABC):
-    @abc.abstractmethod
-    async def get_user_info(self, id: int) -> UserInfo:
-        ...
-
-    @abc.abstractmethod
-    async def get_user_main_deck(self, id: int) -> Deck:
-        ...
-
-    @abc.abstractmethod
-    async def get_user_achievement(self, id: int) -> Achievement:
-        ...
 
 
 class MasterApi(abc.ABC):

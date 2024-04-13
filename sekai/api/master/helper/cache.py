@@ -1,18 +1,19 @@
 import asyncio
+import logging
 import shutil
-import traceback
 from asyncio import Event
 from dataclasses import dataclass
 from datetime import timedelta
+from packaging.version import Version
 from pathlib import Path
 from typing import AsyncIterable, Awaitable, Callable, Protocol, TypeVar
 
 from aiofile import async_open
 from pydantic import RootModel
-from tenacity import retry, wait_fixed
+from tenacity import before_sleep_log, retry, wait_fixed
 
-from sekai.api import MasterApi
 from sekai.api.exc import ObjectNotFound
+from sekai.api.master import MasterApi
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import (
     Character,
@@ -24,6 +25,9 @@ from sekai.core.models.chara import (
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo
+
+
+logger = logging.getLogger(__name__)
 
 
 class IdModel(Protocol):
@@ -101,23 +105,16 @@ class CachingMasterApi(MasterApi):
             await self._check_and_update_cache()
             await asyncio.sleep(self.strategy.check_cycle.total_seconds())
 
+    @retry(wait=wait_fixed(5), before_sleep=before_sleep_log(logger, logging.WARNING, True))
     async def _check_and_update_cache(self) -> None:
         if not self._updating.is_set():
-            return 
+            return
         if self._cached_system_info_path.exists():
             upstream = await self._upstream_system_info()
             cached = await self.get_current_system_info()
-            if cached.published >= upstream.published:
+            if Version(cached.asset_version) >= Version(upstream.asset_version):
                 return
-        await self._retriable_update_cache()
-
-    @retry(wait=wait_fixed(3))
-    async def _retriable_update_cache(self) -> None:
-        try:
-            await self.update_cache()
-        except Exception:
-            traceback.print_exc()
-            raise
+        await self.update_cache()
 
     async def update_cache(self) -> None:
         async def updater(

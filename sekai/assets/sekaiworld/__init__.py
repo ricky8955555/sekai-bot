@@ -6,7 +6,7 @@ from sekai.assets.exc import AssetNotFound
 DEFAULT_SERVER = "https://storage.sekai.best"
 
 
-class SekaiViewerAssets(AssetProvider):
+class SekaiWorldAssets(AssetProvider):
     _server: str
 
     @property
@@ -29,7 +29,7 @@ class SekaiViewerAssets(AssetProvider):
                 return await response.read()
 
     async def get_card_banner(self, id: str, pattern: CardPattern) -> Asset:
-        path = f"/file/pjsekai-assets/startapp/character/member/{id}_rip/"
+        path = f"/sekai-assets/character/member/{id}_rip/"
         match pattern:
             case CardPattern.NORMAL:
                 path += "card_normal.png"

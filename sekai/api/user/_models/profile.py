@@ -185,9 +185,9 @@ class Profile(BaseSchema):
         )
 
     def to_achievement(self) -> Achievement:
-        live_clears = {}
-        full_combos = {}
-        all_perfects = {}
+        live_clears: dict[LiveDifficulty, int] = {}
+        full_combos: dict[LiveDifficulty, int] = {}
+        all_perfects: dict[LiveDifficulty, int] = {}
         for it in self.user_music_difficulty_clear_count:
             difficulty = LiveDifficulty[it.music_difficulty_type.upper()]
             live_clears[difficulty] = it.live_clear

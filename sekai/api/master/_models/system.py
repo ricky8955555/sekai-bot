@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sekai.core.models import ToSharedModel
 from sekai.core.models.system import SystemInfo as SharedSystemInfo
 
@@ -15,7 +13,6 @@ class SystemInfo(BaseSchema, ToSharedModel[SharedSystemInfo]):
     app_hash: str
     asset_hash: str
     app_version_status: str
-    datetime: int
 
     def to_shared_model(self) -> SharedSystemInfo:
         return SharedSystemInfo(
@@ -26,5 +23,4 @@ class SystemInfo(BaseSchema, ToSharedModel[SharedSystemInfo]):
             asset_version=self.asset_version,
             app_hash=self.app_hash,
             asset_hash=self.asset_hash,
-            published=datetime.utcfromtimestamp(self.datetime / 1000),  # type: ignore
         )

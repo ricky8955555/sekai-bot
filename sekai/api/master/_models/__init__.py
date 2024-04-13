@@ -1,9 +1,7 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import pydantic.alias_generators
 from pydantic import BaseModel, ConfigDict
-
-AnyModel = TypeVar("AnyModel")
 
 
 class BaseSchema(BaseModel):
@@ -14,8 +12,4 @@ class BaseSchema(BaseModel):
     )
 
 
-class BaseResponse(BaseSchema, Generic[AnyModel]):
-    total: int
-    limit: int
-    skip: int
-    data: list[AnyModel]
+AnyModel = TypeVar("AnyModel", bound=BaseSchema)

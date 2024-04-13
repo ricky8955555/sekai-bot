@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sekai.core.models import SharedModel
 
 
@@ -11,4 +9,3 @@ class SystemInfo(SharedModel):
     asset_version: str
     app_hash: str
     asset_hash: str
-    published: datetime

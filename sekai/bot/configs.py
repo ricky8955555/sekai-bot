@@ -1,7 +1,17 @@
 from datetime import timedelta
+from enum import Enum
 
-from sekai.api.helper.search import MatchMethod
+from sekai.api.master.helper.search import MatchMethod
 from sekai.bot.config import Config
+
+
+class UserApi(str, Enum):
+    UNIPJSK = "unipjsk"
+
+
+class MasterApi(str, Enum):
+    PJSEKAI = "pjsekai"
+    SEKAIWORLD = "sekaiworld"
 
 
 class BotConfig(Config):
@@ -10,9 +20,12 @@ class BotConfig(Config):
 
 class ServerConfig(Config):
     pjsekai_api: str | None = None
-    uniprsk_api: str | None = None
+    sekaiworld_api: str | None = None
+    unipjsk_api: str | None = None
     pjsekai_assets: str | None = None
     sekaiworld_assets: str | None = None
+    user_api: UserApi = UserApi.UNIPJSK
+    master_api: MasterApi = MasterApi.SEKAIWORLD
     check_cycle: timedelta = timedelta(hours=1)
 
 
