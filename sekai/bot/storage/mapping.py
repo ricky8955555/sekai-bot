@@ -1,5 +1,6 @@
 import asyncio
 from pathlib import Path
+from types import MappingProxyType
 from typing import Generic, Mapping, TypeVar, cast
 
 from aiofile import async_open
@@ -72,9 +73,9 @@ class MappingDataStorage(Generic[_KT, _VT]):
         mapping = await self._load_file()
         return mapping
 
-    async def load(self) -> dict[_KT, _VT]:
+    async def load(self) -> MappingProxyType[_KT, _VT]:
         mapping = await self._load_ref()
-        return dict(mapping)
+        return MappingProxyType(mapping)
 
     async def write(self, mapping: Mapping[_KT, _VT]) -> None:
         self._mapping = dict(mapping)
