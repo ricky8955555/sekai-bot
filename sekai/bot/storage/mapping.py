@@ -84,8 +84,13 @@ class MappingDataStorage(Generic[_KT, _VT]):
     async def get(self, key: _KT, default: _DT = None) -> _VT | _DT:
         mapping = await self._load_ref()
         return mapping.get(key, default)
-
-    async def update(self, key: _KT, value: _VT) -> None:
+    
+    async def set(self, key: _KT, value: _VT) -> None:
         mapping = await self._load_ref()
         mapping[key] = value
+        await self._write_file()
+
+    async def update(self, m: Mapping[_KT, _VT]) -> None:
+        mapping = await self._load_ref()
+        mapping.update(m)
         await self._write_file()

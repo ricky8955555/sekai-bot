@@ -49,17 +49,15 @@ class TelegramFileStorage(Generic[_KT]):
         return file_id
 
     async def bind(self, key: _KT, file_id: str) -> None:
-        await self._files.update(key, file_id)
+        await self._files.set(key, file_id)
 
     async def update(self, key: _KT, obj: Message | FileObject) -> None:
         file = self._extract_file(obj) if isinstance(obj, Message) else obj
         assert file, "object has no file."
-        await self._files.update(key, file.file_id)
+        await self._files.set(key, file.file_id)
 
     async def update_all(self, keys: Sequence[_KT], objs: Sequence[Message | FileObject]) -> None:
         assert len(keys) == len(objs), "counts of 'keys' and 'messages' are not matched."
         file_objs = [self._extract_file(obj) if isinstance(obj, Message) else obj for obj in objs]
         assert all(file_objs), "not all objects have file."
-        files = await self._files.load()
-        files.update(zip(keys, (file.file_id for file in file_objs)))  # type: ignore
-        await self._files.write(files)
+        await self._files.update(zip(keys, (file.file_id for file in file_objs)))  # type: ignore
