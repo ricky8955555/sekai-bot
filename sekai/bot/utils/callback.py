@@ -95,7 +95,7 @@ class CallbackQueryTaskManager:
         )
         return task
 
-    async def cancel_task(self, task: CallbackQueryTask):
+    async def cancel_task(self, task: CallbackQueryTask) -> None:
         with contextlib.suppress(KeyError):
             del self._tasks[task.uuid]
         if task.disposed:
