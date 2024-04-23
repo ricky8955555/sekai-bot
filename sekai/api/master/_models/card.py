@@ -50,4 +50,11 @@ class Card(BaseSchema, ToSharedModel[CardInfo]):
             rarity=_RARITY[self.card_rarity_type],
             asset_id=self.assetbundle_name,
             released=datetime.utcfromtimestamp(self.release_at / 1000),
+            can_special_train=any(
+                [
+                    self.special_training_power_1_bonus_fixed,
+                    self.special_training_power_2_bonus_fixed,
+                    self.special_training_power_3_bonus_fixed,
+                ]
+            ),
         )

@@ -118,9 +118,14 @@ async def card_id(update: Message | CallbackQuery, event: CardEvent):
     card = await context.master_api.get_card_info(event.id)
     character = await context.master_api.get_game_character(card.character)
     queries: list[CardPhotoQuery] = [
-        CardPhotoQuery(asset_id=card.asset_id, pattern=pattern, cutout=False)
-        for pattern in CardPattern
+        CardPhotoQuery(asset_id=card.asset_id, pattern=CardPattern.NORMAL, cutout=False)
     ]
+    if card.can_special_train:
+        queries.append(
+            CardPhotoQuery(
+                asset_id=card.asset_id, pattern=CardPattern.SPECIAL_TRAINED, cutout=False
+            )
+        )
     banners: list[InputMediaPhoto] = []
     for query in queries:
         file = await card_photos.get(query)

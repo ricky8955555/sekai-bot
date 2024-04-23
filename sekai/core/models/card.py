@@ -43,3 +43,4 @@ class CardInfo(SharedModel):
     rarity: CardRarity
     asset_id: str
     released: datetime
+    can_special_train: bool
