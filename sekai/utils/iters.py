@@ -5,7 +5,7 @@ _DT = TypeVar("_DT")
 
 
 def first(iterable: Iterable[_T], condition: Callable[[_T], bool]) -> _T:
-    return next(iter(it for it in iterable if condition(it)))
+    return next(filter(condition, iterable))
 
 
 def at(seq: Sequence[_T], index: int, default: _DT = None) -> _T | _DT:
