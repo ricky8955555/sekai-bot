@@ -29,7 +29,7 @@ async def bind(update: Message | CallbackQuery, event: AccountBindEvent):
     assert (message := update if isinstance(update, Message) else update.message)
     target = update.from_user.id  # type: ignore
     account = Account(user_id=event.id)
-    await accounts.update(target, account)
+    await accounts.set(target, account)
     await message.reply(
         f"your account is successfully bound with user <code>{event.id}</code>.",
         parse_mode=ParseMode.HTML,
