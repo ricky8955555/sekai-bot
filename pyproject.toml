@@ -1,6 +1,6 @@
 [project]
 name = "sekai-bot"
-version = "0.1.0"
+dynamic = ["version"]
 description = ""
 authors = [
     {name = "Ricky8955555", email = "rkmiao@duck.com"},
@@ -18,7 +18,7 @@ dependencies = [
     "python-magic>=0.4.27",
     "Pillow>=10.3.0",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 
@@ -34,6 +34,9 @@ dev = [
     "isort>=5.13.1",
     "pylint>=3.0.3",
 ]
+[tool.pdm.version]
+source = "file"
+path = "sekai/__init__.py"
 
 [tool.pyright]
 typeCheckingMode = "strict"
