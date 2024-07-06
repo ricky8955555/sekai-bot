@@ -16,5 +16,5 @@ def crop_to_fit_ratio(im: ImageType, ratio: float) -> ImageType:
 
 def relative_resize(icon: ImageType, size: tuple[int, int], factor: float) -> ImageType:
     factor = (min(size) * factor) / max(icon.size)
-    target = tuple(map(int, map(factor.__mul__, icon.size)))
+    target = (int(icon.size[0] * factor), int(icon.size[1] * factor))
     return icon.resize(target)
