@@ -3,6 +3,7 @@ from typing import AsyncIterable
 
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character, CharacterInfo, ExtraCharacter, GameCharacter
+from sekai.core.models.gacha import Gacha
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo
@@ -83,4 +84,16 @@ class MasterApi(abc.ABC):
 
     @abc.abstractmethod
     async def get_current_system_info(self) -> SystemInfo:
+        ...
+
+    @abc.abstractmethod
+    def iter_gachas(self) -> AsyncIterable[Gacha]:
+        ...
+
+    @abc.abstractmethod
+    async def get_gacha(self, id: int) -> Gacha:
+        ...
+
+    @abc.abstractmethod
+    def search_gacha_by_name(self, keywords: str) -> AsyncIterable[Gacha]:
         ...

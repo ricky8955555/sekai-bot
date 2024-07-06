@@ -7,6 +7,7 @@ from sekai.api.master import MasterApi
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character, CharacterInfo, CharacterType, ExtraCharacter
 from sekai.core.models.chara import GameCharacter as SharedGameCharacter
+from sekai.core.models.gacha import Gacha as SharedGacha
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo as SharedSystemInfo
@@ -14,6 +15,7 @@ from sekai.core.models.system import SystemInfo as SharedSystemInfo
 from .._models import AnyModel
 from .._models.card import Card
 from .._models.chara import GameCharacter, OutsideCharacter
+from .._models.gacha import Gacha
 from .._models.music import Music, MusicDifficulty, MusicVocal
 from .._models.system import SystemInfo
 from ._models import BaseResponse
@@ -183,3 +185,14 @@ class PjsekaiApi(MasterApi):
     async def get_current_system_info(self) -> SharedSystemInfo:
         models = await self._get("/system-info", SystemInfo)
         return models[0].to_shared_model()
+
+    async def iter_gachas(self, limit: int = 20, skip: int = 0) -> AsyncIterable[SharedGacha]:
+        async for model in self._iter("/database/master/gachas", Gacha, limit, skip):
+            yield model.to_shared_model()
+
+    async def get_gacha(self, id: int) -> SharedGacha:
+        models = await self._get("/database/master/gachas", Gacha, params={"id": id})
+        return models[0].to_shared_model()
+
+    def search_gacha_by_name(self, keywords: str) -> AsyncIterable[SharedGacha]:
+        raise NotImplementedError

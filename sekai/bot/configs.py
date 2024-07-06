@@ -34,6 +34,7 @@ class SearchConfig(Config):
     artist: MatchMethod = MatchMethod.PART_FULL_MATCH
     character: MatchMethod = MatchMethod.FULL_MATCH
     card: MatchMethod = MatchMethod.PART_PARTIAL_MATCH
+    gacha: MatchMethod = MatchMethod.PART_PARTIAL_MATCH
     expiry: timedelta | None = timedelta(minutes=3)
 
 

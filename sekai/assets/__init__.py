@@ -27,3 +27,7 @@ class AssetProvider(abc.ABC):
     @abc.abstractmethod
     async def get_music_cover(self, id: str) -> bytes:
         ...
+
+    @abc.abstractmethod
+    async def get_gacha_logo(self, id: str) -> bytes:
+        ...

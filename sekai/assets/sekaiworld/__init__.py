@@ -54,3 +54,6 @@ class SekaiWorldAssets(AssetProvider):
 
     async def get_music_cover(self, id: str) -> bytes:
         return await self._fetch_asset(f"/sekai-jp-assets/music/jacket/{id}_rip/{id}.png")
+
+    async def get_gacha_logo(self, id: str) -> bytes:
+        return await self._fetch_asset(f"/sekai-jp-assets/gacha/{id}/logo_rip/logo.png")

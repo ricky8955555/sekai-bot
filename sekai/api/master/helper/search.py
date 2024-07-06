@@ -4,6 +4,7 @@ from typing import AsyncIterable, Callable, TypeVar
 from sekai.api.master import MasterApi
 from sekai.core.models import AnySharedModel
 from sekai.core.models.card import CardInfo
+from sekai.core.models.gacha import Gacha
 from sekai.core.models.music import MusicInfo
 
 _T = TypeVar("_T", bound=MasterApi)
@@ -48,7 +49,9 @@ def make_master_api_search_helper(base: type[_T]):
         ) -> AsyncIterable[MusicInfo]:
             return self._search(
                 super().iter_music_infos(),  # type: ignore
-                keywords, lambda model: [model.title], method,
+                keywords,
+                lambda model: [model.title],
+                method,
             )
 
         def search_music_info_by_artist(
@@ -66,7 +69,19 @@ def make_master_api_search_helper(base: type[_T]):
         ) -> AsyncIterable[CardInfo]:
             return self._search(
                 super().iter_card_infos(),  # type: ignore
-                keywords, lambda model: [model.title], method,
+                keywords,
+                lambda model: [model.title],
+                method,
+            )
+
+        def search_gacha_by_name(
+            self, keywords: str, method: MatchMethod = DEFAULT_METHOD
+        ) -> AsyncIterable[Gacha]:
+            return self._search(
+                super().iter_gachas(),  # type: ignore
+                keywords,
+                lambda model: [model.name],
+                method,
             )
 
     return MasterApiSearchHelper

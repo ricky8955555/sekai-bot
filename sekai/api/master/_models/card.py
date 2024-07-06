@@ -19,7 +19,7 @@ ATTRIBUTE = {
     "cute": CardAttribute.CUTE,
     "happy": CardAttribute.HAPPY,
     "mysterious": CardAttribute.MYSTERIOUS,
-    "pure": CardAttribute.PURE
+    "pure": CardAttribute.PURE,
 }
 
 

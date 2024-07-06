@@ -11,6 +11,8 @@ config_path.mkdir(exist_ok=True)
 data_path = working_dir / "data"
 data_path.mkdir(exist_ok=True)
 
+resource_path = working_dir / "res"  # should exists
+
 cache_path = data_path / "cache"
 cache_path.mkdir(exist_ok=True)
 

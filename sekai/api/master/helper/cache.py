@@ -22,6 +22,7 @@ from sekai.core.models.chara import (
     ExtraCharacter,
     GameCharacter,
 )
+from sekai.core.models.gacha import Gacha
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo
@@ -63,6 +64,7 @@ class CachedMasterApi(MasterApi):
             LiveInfo: upstream.iter_live_infos,
             MusicInfo: upstream.iter_music_infos,
             MusicVersion: upstream.iter_music_versions,
+            Gacha: upstream.iter_gachas,
         }
         self._upstream_system_info = upstream.get_current_system_info
         self._updating.set()
@@ -233,3 +235,12 @@ class CachedMasterApi(MasterApi):
         async for info in self.iter_live_infos():
             if info.music_id == id:
                 yield info
+
+    def iter_gachas(self) -> AsyncIterable[Gacha]:
+        return self._iter_caches(Gacha)
+
+    async def get_gacha(self, id: int) -> Gacha:
+        return await self._get_cache(Gacha, id)
+
+    def search_gacha_by_name(self, keywords: str) -> AsyncIterable[Gacha]:
+        raise NotImplementedError

@@ -64,3 +64,6 @@ class PjsekaiAssets(AssetProvider):
 
     async def get_music_cover(self, id: str) -> bytes:
         return await self._fetch_asset(f"/file/pjsekai-assets/startapp/music/jacket/{id}/{id}.png")
+
+    async def get_gacha_logo(self, id: str) -> bytes:
+        return await self._fetch_asset(f"/file/pjsekai-assets/ondemand/gacha/{id}/logo/logo.png")

@@ -8,6 +8,7 @@ from sekai.api.master import MasterApi
 from sekai.core.models.card import CardInfo
 from sekai.core.models.chara import Character, CharacterInfo, CharacterType, ExtraCharacter
 from sekai.core.models.chara import GameCharacter as SharedGameCharacter
+from sekai.core.models.gacha import Gacha as SharedGacha
 from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo as SharedSystemInfo
@@ -15,6 +16,7 @@ from sekai.core.models.system import SystemInfo as SharedSystemInfo
 from .._models import AnyModel
 from .._models.card import Card
 from .._models.chara import GameCharacter, OutsideCharacter
+from .._models.gacha import Gacha
 from .._models.music import Music, MusicDifficulty, MusicVocal
 from .._models.system import SystemInfo
 
@@ -147,3 +149,16 @@ class SekaiWorldApi(MasterApi):
     async def get_current_system_info(self) -> SharedSystemInfo:
         info = await self._get("/sekai-master-db-diff/versions.json", SystemInfo)
         return info.to_shared_model()
+
+    async def iter_gachas(self) -> AsyncIterable[SharedGacha]:
+        for model in await self._iter("/sekai-master-db-diff/gachas.json", Gacha):
+            yield model.to_shared_model()
+
+    async def get_gacha(self, id: int) -> SharedGacha:
+        async for model in self.iter_gachas():
+            if model.id == id:
+                return model
+        raise ObjectNotFound
+
+    def search_gacha_by_name(self, keywords: str) -> AsyncIterable[SharedGacha]:
+        raise NotImplementedError
