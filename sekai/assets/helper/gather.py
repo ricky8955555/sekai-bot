@@ -6,7 +6,7 @@ from sekai.assets import AssetProvider
 from sekai.assets.exc import AssetNotFound
 
 
-class AssetHelper(AssetProvider):
+class AssetGatherer(AssetProvider):
     def _wrap(self, methods: list[Callable[..., Any]]):
         async def _wrapper(*args: Any, **kwargs: Any) -> Any:
             for method in methods:

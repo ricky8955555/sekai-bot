@@ -6,7 +6,6 @@ from sekai.assets import CardPattern
 class CardPhotoQuery(BaseModel):
     asset_id: str
     pattern: CardPattern
-    cutout: bool
 
-    def __hash__(self) -> int:
-        return hash(repr(self))
+    def as_key(self) -> str:
+        return f"{self.asset_id}_{self.pattern}"

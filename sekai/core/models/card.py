@@ -12,6 +12,14 @@ class CardRarity(IntEnum):
     BIRTHDAY = auto()
 
 
+class CardAttribute(IntEnum):
+    COOL = auto()
+    CUTE = auto()
+    HAPPY = auto()
+    MYSTERIOUS = auto()
+    PURE = auto()
+
+
 class Card(SharedModel):
     id: int
     level: int
@@ -40,6 +48,7 @@ class CardInfo(SharedModel):
     id: int
     title: str
     character: int
+    attribute: CardAttribute
     rarity: CardRarity
     asset_id: str
     released: datetime

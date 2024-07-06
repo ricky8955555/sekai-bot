@@ -4,11 +4,11 @@ import shutil
 from asyncio import Event
 from dataclasses import dataclass
 from datetime import timedelta
-from packaging.version import Version
 from pathlib import Path
 from typing import AsyncIterable, Awaitable, Callable, Protocol, TypeVar
 
 from aiofile import async_open
+from packaging.version import Version
 from pydantic import RootModel
 from tenacity import before_sleep_log, retry, wait_fixed
 
@@ -26,7 +26,6 @@ from sekai.core.models.live import LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion
 from sekai.core.models.system import SystemInfo
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -38,24 +37,24 @@ AnyIdModel = TypeVar("AnyIdModel", bound=IdModel)
 
 
 @dataclass(frozen=True)
-class CachingStrategy:
+class CacheStrategy:
     check_cycle: timedelta = timedelta(hours=1)
 
 
-class CachingMasterApi(MasterApi):
+class CachedMasterApi(MasterApi):
     path: Path
-    strategy: CachingStrategy
+    strategy: CacheStrategy
     _updating: Event
     _upstreams: dict[type[IdModel], Callable[[], AsyncIterable[IdModel]]]
     _upstream_system_info: Callable[[], Awaitable[SystemInfo]]
     _cache_task: asyncio.Task[None] | None
 
     def __init__(
-        self, upstream: MasterApi, cache_path: Path, strategy: CachingStrategy | None = None
+        self, upstream: MasterApi, cache_path: Path, strategy: CacheStrategy | None = None
     ) -> None:
         self.upstream = upstream
         self.path = cache_path
-        self.strategy = strategy or CachingStrategy()
+        self.strategy = strategy or CacheStrategy()
         self._updating = Event()
         self._upstreams = {
             CardInfo: upstream.iter_card_infos,

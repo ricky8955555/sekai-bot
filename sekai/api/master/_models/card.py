@@ -1,16 +1,25 @@
 from datetime import datetime
 
 from sekai.core.models import ToSharedModel
-from sekai.core.models.card import CardInfo, CardRarity
+from sekai.core.models.card import CardAttribute, CardInfo, CardRarity
 
-from . import BaseSchema
+from . import TIMEZONE, BaseSchema
 
-_RARITY = {
+RARITY = {
     "rarity_1": CardRarity.ONE,
     "rarity_2": CardRarity.TWO,
     "rarity_3": CardRarity.THREE,
     "rarity_4": CardRarity.FOUR,
     "rarity_birthday": CardRarity.BIRTHDAY,
+}
+
+
+ATTRIBUTE = {
+    "cool": CardAttribute.COOL,
+    "cute": CardAttribute.CUTE,
+    "happy": CardAttribute.HAPPY,
+    "mysterious": CardAttribute.MYSTERIOUS,
+    "pure": CardAttribute.PURE
 }
 
 
@@ -47,9 +56,10 @@ class Card(BaseSchema, ToSharedModel[CardInfo]):
             id=self.id,
             title=self.prefix,
             character=self.character_id,
-            rarity=_RARITY[self.card_rarity_type],
+            rarity=RARITY[self.card_rarity_type],
+            attribute=ATTRIBUTE[self.attr],
             asset_id=self.assetbundle_name,
-            released=datetime.utcfromtimestamp(self.release_at / 1000),
+            released=datetime.fromtimestamp(self.release_at / 1000, TIMEZONE),
             can_special_train=any(
                 [
                     self.special_training_power_1_bonus_fixed,

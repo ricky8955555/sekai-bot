@@ -2,36 +2,28 @@ from aiogram.enums import ParseMode
 from aiogram.filters.command import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from sekai.bot import context, environ
-from sekai.bot.events import EventCallbackQuery, EventCommand
-from sekai.bot.events.account import AccountBindEvent
-from sekai.bot.events.card import DeckEvent
-from sekai.bot.events.user import AchievementEvent, ProfileEvent
-from sekai.bot.storage.mapping import MappingDataStorage
-
-from .models import Account
+from sekai.bot import context
+from sekai.bot.cmpnt import EventCallbackQuery, EventCommand
+from sekai.bot.cmpnt.account.events import AccountBindEvent
+from sekai.bot.cmpnt.account.models import Account
+from sekai.bot.cmpnt.account.storage import accounts
+from sekai.bot.cmpnt.card.events import DeckEvent
+from sekai.bot.cmpnt.user.events import AchievementEvent, ProfileEvent
 
 router = context.module_manager.create_router()
-
-accounts = MappingDataStorage(
-    int,
-    Account,
-    environ.module_data_path / "account",
-    context.storage_strategy,
-)
 
 
 @router.callback_query(EventCallbackQuery(AccountBindEvent))
 @router.message(EventCommand("bind", event=AccountBindEvent))
 async def bind(update: Message | CallbackQuery, event: AccountBindEvent):
     if isinstance(update, Message) and (update.sender_chat or not update.from_user):
-        return await update.reply("binding to anonymous chat is not supported.")
+        return await update.reply("Binding to anonymous chat is not supported.")
     assert (message := update if isinstance(update, Message) else update.message)
     target = update.from_user.id  # type: ignore
     account = Account(user_id=event.id)
     await accounts.set(target, account)
     await message.reply(
-        f"your account is successfully bound with user <code>{event.id}</code>.",
+        f"Your account is successfully bound with user <code>{event.id}</code>.",
         parse_mode=ParseMode.HTML,
     )
 
@@ -40,10 +32,10 @@ async def bind(update: Message | CallbackQuery, event: AccountBindEvent):
 async def account(message: Message):
     target = message.reply_to_message or message
     if target.sender_chat or not target.from_user:
-        return await message.reply("binding to anonymous chat is not supported.")
+        return await message.reply("Binding to anonymous chat is not supported.")
     account = await accounts.get(target.from_user.id)
     if not account:
-        return await message.reply("user has no account binding.")
+        return await message.reply("User has no account binding.")
     buttons = [
         InlineKeyboardButton(text="Profile", callback_data=ProfileEvent(id=account.user_id).pack()),
         InlineKeyboardButton(
@@ -52,7 +44,4 @@ async def account(message: Message):
         InlineKeyboardButton(text="Deck", callback_data=DeckEvent(id=account.user_id).pack()),
     ]
     markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    await message.reply(
-        "please choose the item to query.",
-        reply_markup=markup,
-    )
+    await message.reply("Please choose the item to query.", reply_markup=markup)

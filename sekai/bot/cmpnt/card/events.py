@@ -1,6 +1,6 @@
 from aiogram.filters.command import CommandObject
 
-from sekai.bot.events import Event
+from sekai.bot.cmpnt import Event
 
 
 class DeckEvent(Event, prefix="deck"):

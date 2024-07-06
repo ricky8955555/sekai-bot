@@ -4,9 +4,9 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from sekai.bot import context
-from sekai.bot.events import EventCallbackQuery, EventCommand
-from sekai.bot.events.card import DeckEvent
-from sekai.bot.events.user import AchievementEvent, ProfileEvent
+from sekai.bot.cmpnt import EventCallbackQuery, EventCommand
+from sekai.bot.cmpnt.card.events import DeckEvent
+from sekai.bot.cmpnt.user.events import AchievementEvent, ProfileEvent
 from sekai.bot.utils.enum import humanize_enum
 from sekai.core.models.live import LiveDifficulty
 
@@ -17,7 +17,7 @@ router = context.module_manager.create_router()
 @router.message(EventCommand("profile", event=ProfileEvent))
 async def profile(update: Message | CallbackQuery, event: ProfileEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    message = await message.reply("processing...")
+    message = await message.reply("Fetching data...")
     user = await context.user_api.get_user_info(event.id)
     buttons = [
         [
@@ -52,7 +52,7 @@ async def achievement(update: Message | CallbackQuery, event: ProfileEvent):
         )
 
     assert (message := update if isinstance(update, Message) else update.message)
-    message = await message.reply("processing...")
+    message = await message.reply("Fetching data...")
     user = await context.user_api.get_user_info(event.id)
     achieve = await context.user_api.get_user_achievement(event.id)
     buttons = [

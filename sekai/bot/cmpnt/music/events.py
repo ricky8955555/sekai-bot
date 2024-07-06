@@ -1,8 +1,7 @@
-from enum import IntEnum, auto
-
 from aiogram.filters.command import CommandObject
 
-from sekai.bot.events import Event
+from sekai.bot.cmpnt import Event
+from sekai.bot.cmpnt.music.models import MusicDownloadType
 from sekai.utils import iters
 
 
@@ -16,14 +15,9 @@ class MusicEvent(Event, prefix="music"):
         return MusicEvent(id=int(command.args.strip()))
 
 
-class MusicDownloadType(IntEnum):
-    FULL = auto()
-    PREVIEW = auto()
-
-
 class MusicDownloadEvent(Event, prefix="musicdown"):
     id: int
-    type: MusicDownloadType = MusicDownloadType.FULL
+    type: MusicDownloadType = MusicDownloadType.PREVIEW
 
     @classmethod
     def from_command(cls, command: CommandObject) -> "MusicDownloadEvent":

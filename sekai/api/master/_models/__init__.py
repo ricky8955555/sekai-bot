@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from typing import TypeVar
 
 import pydantic.alias_generators
@@ -13,3 +14,5 @@ class BaseSchema(BaseModel):
 
 
 AnyModel = TypeVar("AnyModel", bound=BaseSchema)
+
+TIMEZONE = timezone(timedelta(hours=9))  # JST (UTC+9)

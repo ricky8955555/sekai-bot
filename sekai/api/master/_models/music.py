@@ -6,7 +6,7 @@ from sekai.core.models.chara import CharacterType
 from sekai.core.models.live import LiveDifficulty, LiveInfo
 from sekai.core.models.music import MusicInfo, MusicVersion, VocalType
 
-from . import BaseSchema
+from . import TIMEZONE, BaseSchema
 
 VOCAL_TYPES = {
     "original_song": VocalType.VIRTUAL_SINGER,
@@ -39,7 +39,7 @@ class MusicVocal(BaseSchema, ToSharedModel[MusicVersion]):
     caption: str
     characters: list[Character]
     assetbundle_name: str
-    archive_published_at: int
+    archive_published_at: int | None = None
 
     def to_shared_model(self) -> MusicVersion:
         singers = [
@@ -83,8 +83,8 @@ class Music(BaseSchema, ToSharedModel[MusicInfo]):
             lyricist=self.lyricist,
             composer=self.composer,
             arranger=self.arranger,
-            released=datetime.utcfromtimestamp(self.released_at / 1000),  # type: ignore
-            published=datetime.utcfromtimestamp(self.published_at / 1000),  # type: ignore
+            released=datetime.fromtimestamp(self.released_at / 1000, TIMEZONE),
+            published=datetime.fromtimestamp(self.published_at / 1000, TIMEZONE),
             asset_id=self.assetbundle_name,
         )
 

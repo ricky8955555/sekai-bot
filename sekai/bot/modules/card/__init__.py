@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 
 from aiogram.enums import ParseMode
@@ -12,38 +13,26 @@ from aiogram.types import (
 )
 
 from sekai.assets import CardPattern
-from sekai.assets.exc import AssetNotFound
-from sekai.bot import context, environ
-from sekai.bot.events import EventCallbackQuery, EventCommand
-from sekai.bot.events.card import CardEvent, DeckEvent
-from sekai.bot.storage.telegram import TelegramFileStorage
+from sekai.bot import context
+from sekai.bot.cmpnt import EventCallbackQuery, EventCommand
+from sekai.bot.cmpnt.card.events import CardEvent, DeckEvent
+from sekai.bot.cmpnt.card.models import CardPhotoQuery
+from sekai.bot.cmpnt.card.storage import card_banners, card_cutouts
+from sekai.bot.constants import RARITY_EMOJIS
 from sekai.bot.utils.callback import CallbackQueryTaskManager
-from sekai.core.models.card import CardRarity
-
-from .models import CardPhotoQuery
+from sekai.bot.utils.enum import humanize_enum
+from sekai.bot.utils.file import complete_filename
 
 router = context.module_manager.create_router()
 
 tasks = CallbackQueryTaskManager(router, "card_task", "task is destroyed.")
-card_photos = TelegramFileStorage(
-    CardPhotoQuery, context.bot, environ.file_storage_data_path / "card", context.storage_strategy
-)
-
-
-_RARITY = {
-    CardRarity.ONE: "⭐",
-    CardRarity.TWO: "⭐⭐",
-    CardRarity.THREE: "⭐⭐⭐",
-    CardRarity.FOUR: "⭐⭐⭐⭐",
-    CardRarity.BIRTHDAY: "🎀",
-}
 
 
 @router.callback_query(EventCallbackQuery(DeckEvent))
 @router.message(EventCommand("deck", event=DeckEvent))
 async def deck(update: Message | CallbackQuery, event: DeckEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("processing...")
+    hint_message = await message.reply("Fetching data...")
     deck = await context.user_api.get_user_main_deck(event.id)
     cards = [await context.master_api.get_card_info(card.id) for card in deck.members]
     charas = [await context.master_api.get_game_character(card.character) for card in cards]
@@ -61,19 +50,15 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
         CardPhotoQuery(
             asset_id=card.asset_id,
             pattern=(CardPattern.SPECIAL_TRAINED if member.special_trained else CardPattern.NORMAL),
-            cutout=True,
         )
         for member, card in zip(deck.members, cards)
     ]
-    cutouts: list[InputMediaPhoto] = []
-    for query in queries:
-        file = await card_photos.get(query)
-        if not file:
-            with contextlib.suppress(AssetNotFound):
-                cutout = await context.assets.get_card_cutout(query.asset_id, query.pattern)
-                file = BufferedInputFile(cutout.data, f"{query.pattern.name}{cutout.extension}")
-        if file:
-            cutouts.append(InputMediaPhoto(media=file))
+    await hint_message.edit_text("Fetching card cutouts...")
+    cutouts = await asyncio.gather(*map(card_cutouts.get, queries))
+    cutouts = [
+        InputMediaPhoto(media=BufferedInputFile(cutout, complete_filename(query.asset_id, cutout)))
+        for query, cutout in zip(queries, cutouts)
+    ]
     member_infos = [
         f"{chara.name} ("
         + f"Lv.{member.level}"
@@ -82,8 +67,8 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
         + ")"
         for (chara, member) in zip(charas, deck.members)
     ]
+    await hint_message.edit_text("Uploading images...")
     messages = await message.reply_media_group(cutouts)  # type: ignore
-    await card_photos.update_all(queries, messages)
     await messages[0].reply(
         f"""
 <u><b><i>{deck.name}</i></b></u> (ID: {deck.id})
@@ -114,31 +99,22 @@ async def deck(update: Message | CallbackQuery, event: DeckEvent):
 @router.callback_query(EventCallbackQuery(CardEvent))
 async def card_id(update: Message | CallbackQuery, event: CardEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("processing...")
+    hint_message = await message.reply("Fetching data...")
     card = await context.master_api.get_card_info(event.id)
     character = await context.master_api.get_game_character(card.character)
     queries: list[CardPhotoQuery] = [
-        CardPhotoQuery(asset_id=card.asset_id, pattern=CardPattern.NORMAL, cutout=False)
+        CardPhotoQuery(asset_id=card.asset_id, pattern=CardPattern.NORMAL)
     ]
     if card.can_special_train:
-        queries.append(
-            CardPhotoQuery(
-                asset_id=card.asset_id, pattern=CardPattern.SPECIAL_TRAINED, cutout=False
-            )
-        )
-    banners: list[InputMediaPhoto] = []
-    for query in queries:
-        file = await card_photos.get(query)
-        if not file:
-            with contextlib.suppress(AssetNotFound):
-                banner = await context.assets.get_card_banner(query.asset_id, query.pattern)
-                file = BufferedInputFile(banner.data, f"{query.pattern.name}{banner.extension}")
-        if file:
-            banners.append(InputMediaPhoto(media=file))
-        else:
-            queries.remove(query)
+        queries.append(CardPhotoQuery(asset_id=card.asset_id, pattern=CardPattern.SPECIAL_TRAINED))
+    await hint_message.edit_text("Fetching card banners...")
+    banners = await asyncio.gather(*map(card_banners.get, queries))
+    banners = [
+        InputMediaPhoto(media=BufferedInputFile(banner, complete_filename(query.asset_id, banner)))
+        for query, banner in zip(queries, banners)
+    ]
+    await hint_message.edit_text("Uploading images...")
     messages = await message.reply_media_group(banners)  # type: ignore
-    await card_photos.update_all(queries, messages)
     await messages[0].edit_caption(
         caption=f"""
 <u><b>{card.title}</b></u>
@@ -148,7 +124,8 @@ Character: {character.name}
 Gender: {character.gender.name.capitalize()}
 Height: {character.height} cm
 Release Time: {card.released}
-Rarity: {_RARITY[card.rarity]}
+Attribute: {humanize_enum(card.attribute)}
+Rarity: {RARITY_EMOJIS[card.rarity]}
         """.strip(),
         parse_mode=ParseMode.HTML,
     )
@@ -190,7 +167,7 @@ Character: {character.name}
 
     if not command.args:
         return
-    message = await message.reply("processing...")
+    message = await message.reply("Fetching data...")
     it = aiter(
         context.master_api.search_card_info_by_title(command.args, context.search_config.card)
     )

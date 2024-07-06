@@ -11,29 +11,19 @@ from aiogram.types import (
     Message,
 )
 
-from sekai.bot import context, environ
-from sekai.bot.events import EventCallbackQuery, EventCommand
-from sekai.bot.events.music import MusicDownloadEvent, MusicDownloadType, MusicEvent
-from sekai.bot.storage.telegram import TelegramFileStorage
+from sekai.bot import context
+from sekai.bot.cmpnt import EventCallbackQuery, EventCommand
+from sekai.bot.cmpnt.music.events import MusicDownloadEvent, MusicEvent
+from sekai.bot.cmpnt.music.models import AudioQuery, MusicDownloadType
+from sekai.bot.cmpnt.music.storage import music_audios, music_covers
 from sekai.bot.utils.callback import CallbackQueryTaskManager
 from sekai.bot.utils.enum import humanize_enum
+from sekai.bot.utils.file import complete_filename
 from sekai.core.models.music import MusicInfo, MusicVersion
-
-from . import process
-from .models import AudioQuery
 
 router = context.module_manager.create_router()
 
 tasks = CallbackQueryTaskManager(router, "music_task", "task is destroyed.")
-audios = TelegramFileStorage(
-    AudioQuery,
-    context.bot,
-    environ.file_storage_data_path / "music_audio",
-    context.storage_strategy,
-)
-covers = TelegramFileStorage(
-    str, context.bot, environ.file_storage_data_path / "music_cover", context.storage_strategy
-)
 
 
 @router.callback_query(EventCallbackQuery(MusicEvent))
@@ -52,7 +42,7 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         ]
 
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("processing...")
+    hint_message = await message.reply("Fetching data...")
     music = await context.master_api.get_music_info(event.id)
     versions = [version async for version in context.master_api.iter_versions_of_music(event.id)]
     ver_singers = await version_singers(versions)
@@ -64,10 +54,9 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
     diffculties = "\n".join(
         f"・<b>{humanize_enum(live.difficulty)}:</b> Lv.{live.level}" for live in lives
     )
-    cover_file = await covers.get(music.asset_id)
-    if not cover_file:
-        cover = await context.assets.get_music_cover(music.asset_id)
-        cover_file = BufferedInputFile(cover.data, f"{music.asset_id}{cover.extension}")
+    await hint_message.edit_text("Fetching music cover...")
+    cover = await music_covers.get(music.asset_id)
+    cover = BufferedInputFile(cover, complete_filename(music.asset_id, cover))
     buttons = [
         InlineKeyboardButton(
             text=(f"{humanize_enum(version.vocal_type)} ver. " f"({', '.join(singers)})"),
@@ -76,8 +65,9 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         for version, singers in zip(versions, ver_singers)
     ]
     markup = InlineKeyboardMarkup(inline_keyboard=[[button] for button in buttons])
+    await hint_message.edit_text("Uploading image...")
     message = await message.reply_photo(
-        cover_file,
+        cover,
         f"""
 <u><b><i>{music.title}</i></b></u>
 
@@ -97,7 +87,6 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         parse_mode=ParseMode.HTML,
         reply_markup=markup,
     )
-    await covers.update(music.asset_id, message)
     with contextlib.suppress(Exception):
         if isinstance(update, CallbackQuery):
             await update.answer()
@@ -105,20 +94,17 @@ async def music_id(update: Message | CallbackQuery, event: MusicEvent):
         await hint_message.delete()
 
 
-async def iter_music(
-    message: Message,
-    iterable: AsyncIterable[MusicInfo],
-):
+async def iter_music(message: Message, iterable: AsyncIterable[MusicInfo]):
     async def next_music(update: CallbackQuery | Message):
         assert (message := update if isinstance(update, Message) else update.message)
         if not (music := await anext(it, None)):
             if isinstance(update, Message):
-                return await message.edit_text("no result found.")
+                return await message.edit_text("No result found.")
             assert message.reply_markup
             buttons = message.reply_markup.inline_keyboard[0][:1]  # in known condition.
             markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
             await message.edit_reply_markup(reply_markup=markup)
-            return await update.answer("no more result available.")
+            return await update.answer("No more result available.")
         task = tasks.create_task(next_music, expired_after=context.search_config.expiry)
         buttons = [
             InlineKeyboardButton(text="Detail", callback_data=MusicEvent(id=music.id).pack()),
@@ -138,7 +124,7 @@ async def iter_music(
             reply_markup=markup,
         )
 
-    message = await message.reply("processing...")
+    message = await message.reply("Fetching data...")
     it = aiter(iterable)
     await next_music(message)
 
@@ -170,48 +156,21 @@ async def artist(message: Message, command: CommandObject):
 @router.message(EventCommand("musicdown", event=MusicDownloadEvent))
 async def music_download(update: Message | CallbackQuery, event: MusicDownloadEvent):
     assert (message := update if isinstance(update, Message) else update.message)
-    hint_message = await message.reply("processing...")
-    version = await context.master_api.get_music_version(event.id)
-    query = AudioQuery(asset_id=version.asset_id, type=event.type)
-    singers = [await context.master_api.get_character_info(singer) for singer in version.singers]
-    match query.type:
-        case MusicDownloadType.FULL:
-            music_asset = await context.assets.get_music(version.asset_id)
-            buttons = []
-        case MusicDownloadType.PREVIEW:
-            music_asset = await context.assets.get_music_preview(version.asset_id)
-            buttons = [
-                InlineKeyboardButton(
-                    text="Download Full Version",
-                    callback_data=MusicDownloadEvent(
-                        id=event.id, type=MusicDownloadType.FULL
-                    ).pack(),
-                )
-            ]
-    music_file = await audios.get(query)
+    hint_message = await message.reply("Fetching audio...")
+    query = AudioQuery(version_id=event.id, type=event.type)
+    audio = await music_audios.get(query)
+    audio = BufferedInputFile(audio, complete_filename(str(query.version_id), audio))
+    buttons = []
+    if event.type == MusicDownloadType.PREVIEW:
+        buttons.append(
+            InlineKeyboardButton(
+                text="Download Full Version",
+                callback_data=MusicDownloadEvent(id=event.id, type=MusicDownloadType.FULL).pack(),
+            )
+        )
     markup = InlineKeyboardMarkup(inline_keyboard=[buttons])
-    if not music_file:
-        match query.type:
-            case MusicDownloadType.FULL:
-                music_asset = await context.assets.get_music(version.asset_id)
-                offset = 8.0
-            case MusicDownloadType.PREVIEW:
-                music_asset = await context.assets.get_music_preview(version.asset_id)
-                offset = 0.0
-        music = await context.master_api.get_music_info(version.music_id)
-        artists = "/".join(singer.name for singer in singers)
-        cover = await context.assets.get_music_cover(music.asset_id)
-        metadata = process.Metadata(music.title, music.composer, artists, cover)
-        processed = await process.process_audio(music_asset, metadata, offset)
-        singers_str = ", ".join(singer.name for singer in singers)
-        participants = singers_str if singers_str else music.composer
-        filename = f"{participants} - {music.title}{processed.extension}"
-        music_file = BufferedInputFile(processed.data, filename)
-    message = await message.reply_audio(
-        music_file,
-        reply_markup=markup,
-    )
-    await audios.update(query, message)
+    await hint_message.edit_text("Uploading audio...")
+    message = await message.reply_audio(audio, reply_markup=markup)
     with contextlib.suppress(Exception):
         if isinstance(update, CallbackQuery):
             await update.answer()

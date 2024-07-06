@@ -2,7 +2,7 @@ import contextlib
 
 from aiohttp import ClientResponse, ClientSession
 
-from sekai.assets import Asset, AssetProvider, CardPattern
+from sekai.assets import AssetProvider, CardPattern
 from sekai.assets.exc import AssetNotFound
 
 DEFAULT_SERVER = "https://assets.pjsek.ai"
@@ -30,52 +30,37 @@ class PjsekaiAssets(AssetProvider):
                 response = self._check_response(response)
                 return await response.read()
 
-    async def get_card_banner(self, id: str, pattern: CardPattern) -> Asset:
+    async def get_card_banner(self, id: str, pattern: CardPattern) -> bytes:
         path = f"/file/pjsekai-assets/startapp/character/member/{id}/"
         match pattern:
             case CardPattern.NORMAL:
                 path += "card_normal.png"
             case CardPattern.SPECIAL_TRAINED:
                 path += "card_after_training.png"
-        return Asset(
-            await self._fetch_asset(path),
-            ".png",
-        )
+        return await self._fetch_asset(path)
 
-    async def get_card_cutout(self, id: str, pattern: CardPattern) -> Asset:
+    async def get_card_cutout(self, id: str, pattern: CardPattern) -> bytes:
         path = f"/file/pjsekai-assets/startapp/character/member_cutout/{id}/"
         match pattern:
             case CardPattern.NORMAL:
                 path += "normal/normal.png"
             case CardPattern.SPECIAL_TRAINED:
                 path += "after_training/after_training.png"
-        return Asset(
-            await self._fetch_asset(path),
-            ".png",
-        )
+        return await self._fetch_asset(path)
 
-    async def get_music(self, id: str) -> Asset:
+    async def get_music(self, id: str) -> bytes:
         raise NotImplementedError
 
-    async def get_music_preview(self, id: str) -> Asset:
+    async def get_music_preview(self, id: str) -> bytes:
         with contextlib.suppress(AssetNotFound):
-            return Asset(
-                await self._fetch_asset(
-                    f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.flac"
-                ),
-                ".flac",
+            return await self._fetch_asset(
+                f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.flac"
             )
         with contextlib.suppress(AssetNotFound):
-            return Asset(
-                await self._fetch_asset(
-                    f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.wav"
-                ),
-                ".wav",
+            return await self._fetch_asset(
+                f"/file/pjsekai-assets/startapp/music/short/{id}/{id}_short.wav"
             )
         raise AssetNotFound
 
-    async def get_music_cover(self, id: str) -> Asset:
-        return Asset(
-            await self._fetch_asset(f"/file/pjsekai-assets/startapp/music/jacket/{id}/{id}.png"),
-            ".png",
-        )
+    async def get_music_cover(self, id: str) -> bytes:
+        return await self._fetch_asset(f"/file/pjsekai-assets/startapp/music/jacket/{id}/{id}.png")
